@@ -1,4 +1,4 @@
-from HMMGen import GenHMM
+from hmm_gen import GenHMM
 
 observables = 3
 hiddenStates = 5
