@@ -35,5 +35,12 @@ class TwoLayerModel(pl.LightningModule):
         self.log("test_loss", loss)
         return loss
 
+    def validation_step(self, batch):
+        x, y = batch
+        logits = self(x)
+        loss = self.loss_fn(logits, y)
+        self.log("val_loss", loss, prog_bar=True)
+        return loss
+
     def configure_optimizers(self):
         return optim.Adam(self.parameters(), lr=self.lr)
