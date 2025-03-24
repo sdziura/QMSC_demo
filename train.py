@@ -29,7 +29,10 @@ class TrainParams:
 
 class Train:
     def __init__(self):
-        mlflow.set_tracking_uri(uri="http://127.0.0.1:8080")
+        mlflow.set_tracking_uri(
+            uri="http://127.0.0.1:8080"
+        )  # command to start server locally: mlflow server --host 127.0.0.1 --port 8080 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+
         mlflow.set_experiment("HMM_Classification")
         mlflow.pytorch.autolog()
 
@@ -126,6 +129,10 @@ class Train:
         )
 
 
-if __name__ == "__main__":
+def main():
     model = Train()
     model.train()
+
+
+if __name__ == "__main__":
+    main()

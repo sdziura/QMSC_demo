@@ -107,7 +107,7 @@ class BinaryHMMGenerator:
         print("Entropy of bad data:", entropy_h)
 
         # Generate sequences
-        num_chains = int(samples/2)
+        num_chains = int(samples / 2)
         chain_length = chain_length
 
         observed_sequences_low = []
