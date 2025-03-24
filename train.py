@@ -38,7 +38,34 @@ class OptunaParams:
 
 
 class Train:
-
+    """
+    A class used to train a machine learning model using PyTorch Lightning and MLFlow for experiment tracking.
+    Attributes
+    ----------
+    fixed_params : FixedParams
+        An instance of FixedParams containing fixed hyperparameters for training.
+    optuna_params : OptunaParams
+        An instance of OptunaParams containing hyperparameters to be optimized by Optuna.
+    X : torch.Tensor
+        The input data tensor.
+    y : torch.Tensor
+        The labels tensor.
+    Methods
+    -------
+    __init__():
+        Initializes the Train class, sets up MLFlow tracking, and loads data.
+    load_data(file_path: str = "hmm_gaussian_chains.h5") -> None:
+        Loads data from an HDF5 file and preprocesses it.
+    train() -> None:
+        Trains the model using cross-validation.
+    train_fold(fold: int, train_loader: DataLoader, val_loader: DataLoader) -> None:
+        Trains the model for a specific fold and logs the results.
+    log_mlflow_model(model: pl.LightningModule, fold: int) -> None:
+        Logs the trained model to MLFlow.
+    get_dataloader(dataset: TensorDataset, indices: np.ndarray, shuffle: bool) -> DataLoader:
+        Creates a DataLoader for a given dataset and indices.
+    """
+    
     def __init__(self):
         mlflow.set_tracking_uri(
             uri="http://127.0.0.1:8080"

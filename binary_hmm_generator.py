@@ -20,7 +20,33 @@ import h5py
 
 
 class BinaryHMMGenerator:
-
+    """
+    A class to generate binary Hidden Markov Models (HMMs) with Gaussian emissions.
+    Attributes:
+    -----------
+    n_hidden : int
+        Number of hidden states in the HMM.
+    n_observables : int
+        Number of observable features.
+    startprob : np.ndarray
+        Initial state probabilities.
+    low_entropy_transitions : np.ndarray
+        Transition matrix with low entropy.
+    high_entropy_transitions : np.ndarray
+        Transition matrix with high entropy.
+    means : np.ndarray
+        Mean values for the Gaussian emissions for each state.
+    covars : np.ndarray
+        Covariance values for the Gaussian emissions for each state.
+    seed : int
+        Random seed for reproducibility.
+    Methods:
+    --------
+    gen_binary_hmm(samples=2000, chain_length=10):
+        Generates sequences from two HMMs (one with low entropy and one with high entropy),
+        concatenates them, shuffles them, and saves them to an HDF5 file.
+    """
+    
     def __init__(
         self,
         n_hidden=4,

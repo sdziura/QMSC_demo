@@ -4,6 +4,28 @@ rng = np.random.RandomState(42)
 
 
 class GenHMM:
+    """
+    A class used to generate Hidden Markov Models (HMMs).
+    Attributes
+    ----------
+    initial_probs : array-like, optional
+        Initial state probabilities vector.
+    transitions : array-like, optional
+        State transition probabilities matrix.
+    emissions : array-like, optional
+        Emission probabilities matrix.
+    Methods
+    -------
+    __gen_probs_matrix(rows=2, cols=2)
+        Generates a probabilities matrix with row values summing to 1.
+    __gen_probs_vector(rows=2)
+        Generates a probabilities vector with values summing to 1.
+    gen_observables_options(observables=1, n_options=2)
+        Generates sets of possible values for each observable.
+    gen_hmm(samples, observables=1, hiddenStates=[0, 1], observablesOptions=None, initialProbs=None, transitions=None, emissions=None)
+        Generates a Hidden Markov Model with specified parameters or random values if not provided.
+    """
+
     def __init__(self, initial_probs=None, transitions=None, emissions=None):
         self.initial_probs = initial_probs
         self.transitions = transitions
