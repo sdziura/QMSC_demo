@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset, Subset
 
+
 def load_data(file_path: str):
     with h5py.File(file_path, "r") as f:
         labels, observations = f["label"][:], f["observed"][:]
@@ -13,7 +14,10 @@ def load_data(file_path: str):
 
     return X, y
 
-def get_dataloader(dataset: TensorDataset, indices: np.ndarray, shuffle: bool, batch_size: int) -> DataLoader:
+
+def get_dataloader(
+    dataset: TensorDataset, indices: np.ndarray, shuffle: bool, batch_size: int
+) -> DataLoader:
     subset = Subset(dataset, indices)
     return DataLoader(
         subset,

@@ -67,10 +67,16 @@ class Train:
             logger.info(f"Fold {fold+1}")
 
             train_loader = get_dataloader(
-                dataset=dataset, indices=train_idx, shuffle=True, batch_size=optuna_params.batch_size
+                dataset=dataset,
+                indices=train_idx,
+                shuffle=True,
+                batch_size=optuna_params.batch_size,
             )
             val_loader = get_dataloader(
-                dataset=dataset, indices=val_idx, shuffle=False, batch_size=optuna_params.batch_size
+                dataset=dataset,
+                indices=val_idx,
+                shuffle=False,
+                batch_size=optuna_params.batch_size,
             )
 
             val_loss = self.train_fold(fold, train_loader, val_loader, optuna_params)
@@ -90,12 +96,9 @@ class Train:
         )
 
         tb_logger = TensorBoardLogger("logs/", name="my_model")
-        
+
         early_stopping = EarlyStopping(
-            monitor="val_loss",
-            patience=3,
-            verbose=True,
-            mode="min"
+            monitor="val_loss", patience=3, verbose=True, mode="min"
         )
 
         with mlflow.start_run(run_name=f"Fold_{fold+1}"):
@@ -115,7 +118,7 @@ class Train:
                         monitor="val_loss",
                         mode="min",
                     ),
-                    early_stopping
+                    early_stopping,
                 ],
             )
 
@@ -146,31 +149,12 @@ class Train:
             hidden_size_2=trial.suggest_int("hidden_size_2", 16, 128, step=16),
             hidden_size_3=trial.suggest_int("hidden_size_3", 16, 128, step=16),
             batch_size=trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
-            dropout=trial.suggest_uniform("dropout", 0.1, 0.5)
+            dropout=trial.suggest_uniform("dropout", 0.1, 0.5),
         )
 
         return self.train(optuna_params)
 
-    def optimize_hyperparameters(self, n_trials: int = 100):
+    def optimize_hyperparameters(self):
         study = optuna.create_study(direction="minimize")
-        study.optimize(self.objective, n_trials=n_trials)
+        study.optimize(self.objective, n_trials=self.fixed_params.optuna_trials)
         return study.best_params
-
-
-def main():
-    trainer = Train()
-    best_params = trainer.optimize_hyperparameters(n_trials=5)
-    logger.info(f"Best hyperparameters: {best_params}")
-
-    optuna_params = OptunaParams(**best_params)
-    trainer.train(optuna_params)
-
-    # Log the final model with the best hyperparameters
-    best_model = TwoLayerModel(
-        fixed_params=trainer.fixed_params, optuna_params=optuna_params
-    )
-    trainer.log_mlflow_model(best_model)
-
-
-if __name__ == "__main__":
-    main()
