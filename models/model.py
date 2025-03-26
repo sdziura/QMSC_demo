@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 import torchmetrics
 
-from params import FixedParams, OptunaParams
+from config import FixedParams, OptunaParams
 
 
 class TwoLayerModel(pl.LightningModule):

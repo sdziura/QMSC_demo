@@ -1,4 +1,4 @@
-from hmm_gen import GenHMM
+from data.hmm_gen import GenHMM
 
 
 def main():

@@ -1,7 +1,6 @@
-import h5py
 import torch
 import numpy as np
-from torch.utils.data import DataLoader, TensorDataset, Subset
+from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.model_selection import StratifiedKFold
@@ -11,8 +10,9 @@ import optuna
 from pytorch_lightning.callbacks import EarlyStopping
 
 import logging
-from params import FixedParams, OptunaParams
-from model import TwoLayerModel
+from config import FixedParams, OptunaParams
+from models.model import TwoLayerModel
+from utils.data_loader import load_data, get_dataloader
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,27 +46,12 @@ class Train:
     """
 
     def __init__(self):
-        mlflow.set_tracking_uri(
-            uri="http://127.0.0.1:8080"
-        )  # command to start server locally: mlflow server --host 127.0.0.1 --port 8080 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
-
-        mlflow.set_experiment("HMM_Classification_2")
+        self.fixed_params = FixedParams()
+        mlflow.set_tracking_uri("http://127.0.0.1:8080")
+        mlflow.set_experiment(self.fixed_params.experiment_name)
         mlflow.pytorch.autolog()
 
-        self.fixed_params = FixedParams()
-        self.load_data()
-
-    def load_data(self, file_path: str = "hmm_gaussian_chains.h5") -> None:
-        with h5py.File(file_path, "r") as f:
-            labels, observations = f["label"][:], f["observed"][:]
-
-        # Flatten each (10,2) sequence into a 1D vector of size 20
-        observations = observations.reshape(observations.shape[0], -1)
-        self.X = torch.tensor(observations, dtype=torch.float32)
-        self.y = torch.tensor(labels, dtype=torch.long)
-
-        logger.info(f"Observations shape: {self.X.shape}")
-        logger.info(f"Labels shape: {self.y.shape}")
+        self.X, self.y = load_data(self.fixed_params.dataset_file)
 
     def train(self, optuna_params: OptunaParams) -> float:
         # Convert dataset into a list of indices for cross-validation
@@ -81,11 +66,10 @@ class Train:
         for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
             logger.info(f"Fold {fold+1}")
 
-            # Create a PyTorch Dataset & DataLoader
-            train_loader = self.get_dataloader(
+            train_loader = get_dataloader(
                 dataset=dataset, indices=train_idx, shuffle=True, batch_size=optuna_params.batch_size
             )
-            val_loader = self.get_dataloader(
+            val_loader = get_dataloader(
                 dataset=dataset, indices=val_idx, shuffle=False, batch_size=optuna_params.batch_size
             )
 
@@ -105,10 +89,8 @@ class Train:
             fixed_params=self.fixed_params, optuna_params=optuna_params
         )
 
-        # Define a TensorBoard logger
         tb_logger = TensorBoardLogger("logs/", name="my_model")
-
-        # Define early stopping callback
+        
         early_stopping = EarlyStopping(
             monitor="val_loss",
             patience=3,
@@ -116,10 +98,9 @@ class Train:
             mode="min"
         )
 
-        # Start MLFlow run
         with mlflow.start_run(run_name=f"Fold_{fold+1}"):
-            mlflow.log_params(self.fixed_params.__dict__)  # Log fixed hyperparameters
-            mlflow.log_params(optuna_params.__dict__)  # Log Optuna hyperparameters
+            mlflow.log_params(self.fixed_params.__dict__)
+            mlflow.log_params(optuna_params.__dict__)
             trainer = pl.Trainer(
                 max_epochs=self.fixed_params.max_epochs,
                 accelerator="auto",
@@ -157,17 +138,6 @@ class Train:
             signature=signature,
         )
 
-    def get_dataloader(
-        self, dataset: TensorDataset, indices: np.ndarray, shuffle: bool, batch_size: int
-    ) -> DataLoader:
-        subset = Subset(dataset, indices)
-        return DataLoader(
-            subset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_workers=4,
-        )
-
     def objective(self, trial):
         # Suggest hyperparameters for Optuna to optimize
         optuna_params = OptunaParams(
@@ -179,7 +149,6 @@ class Train:
             dropout=trial.suggest_uniform("dropout", 0.1, 0.5)
         )
 
-        # Use the train method to train the model and return the average validation loss
         return self.train(optuna_params)
 
     def optimize_hyperparameters(self, n_trials: int = 100):
