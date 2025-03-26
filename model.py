@@ -1,22 +1,25 @@
 from torch import nn
 import pytorch_lightning as pl
+import torch
 import torch.optim as optim
+import torchmetrics
 
 from params import FixedParams, OptunaParams
 
 
 class TwoLayerModel(pl.LightningModule):
     """
-    A PyTorch Lightning Module implementing a neural network with two hidden layers.
+    A PyTorch Lightning Module implementing a neural network with two hidden layers and dropout.
 
     Args:
         fixed_params (FixedParams): An object containing fixed parameters such as input and output sizes.
-        optuna_params (OptunaParams): An object containing hyperparameters to be optimized, such as learning rate and hidden layer sizes.
+        optuna_params (OptunaParams): An object containing hyperparameters to be optimized, such as learning rate, hidden layer sizes, and dropout.
 
     Attributes:
         lr (float): Learning rate for the optimizer.
-        model (nn.Sequential): The neural network model consisting of linear layers and ReLU activations.
+        model (nn.Sequential): The neural network model consisting of linear layers, ReLU activations, and dropout.
         loss_fn (nn.CrossEntropyLoss): The loss function used for training and evaluation.
+        accuracy (torchmetrics.Accuracy): The accuracy metric used for evaluation.
 
     Methods:
         forward(x):
@@ -41,36 +44,46 @@ class TwoLayerModel(pl.LightningModule):
         self.model = nn.Sequential(
             nn.Linear(fixed_params.input_size, optuna_params.hidden_size_1),
             nn.ReLU(),
+            nn.Dropout(optuna_params.dropout),
             nn.Linear(optuna_params.hidden_size_1, optuna_params.hidden_size_2),
             nn.ReLU(),
+            nn.Dropout(optuna_params.dropout),
             nn.Linear(optuna_params.hidden_size_2, optuna_params.hidden_size_3),
             nn.ReLU(),
+            nn.Dropout(optuna_params.dropout),
             nn.Linear(optuna_params.hidden_size_3, fixed_params.output_size),
         )
         self.loss_fn = nn.CrossEntropyLoss()
+        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=fixed_params.output_size)
 
     def forward(self, x):
         return self.model(x)
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("train_loss", loss)
         return loss
 
-    def test_step(self, batch):
+    def test_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
+        preds = torch.argmax(logits, dim=1)
+        acc = self.accuracy(preds, y)
         self.log("test_loss", loss)
+        self.log("test_acc", acc)
         return loss
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
+        preds = torch.argmax(logits, dim=1)
+        acc = self.accuracy(preds, y)
         self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
