@@ -2,7 +2,7 @@ from torch import nn
 import pytorch_lightning as pl
 import torch.optim as optim
 
-from train import FixedParams, OptunaParams
+from params import FixedParams, OptunaParams
 
 
 class TwoLayerModel(pl.LightningModule):

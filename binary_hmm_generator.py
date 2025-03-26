@@ -46,7 +46,7 @@ class BinaryHMMGenerator:
         Generates sequences from two HMMs (one with low entropy and one with high entropy),
         concatenates them, shuffles them, and saves them to an HDF5 file.
     """
-    
+
     def __init__(
         self,
         n_hidden=4,
