@@ -9,33 +9,38 @@ from config import FixedParams, OptunaParams
 
 class TwoLayerModel(pl.LightningModule):
     """
-    A PyTorch Lightning Module implementing a neural network with two hidden layers and dropout.
+        A PyTorch Lightning Module implementing a neural network with two hidden layers and dropout.
 
-    Args:
-        fixed_params (FixedParams): An object containing fixed parameters such as input and output sizes.
-        optuna_params (OptunaParams): An object containing hyperparameters to be optimized, such as learning rate, hidden layer sizes, and dropout.
+        Args
+        ----
+            fixed_params : FixedParams
+    An object containing fixed parameters such as input and output sizes.
+            optuna_params : OptunaParams
+    An object containing hyperparameters to be optimized, such as learning rate, hidden layer sizes, and dropout.
 
-    Attributes:
-        lr (float): Learning rate for the optimizer.
-        model (nn.Sequential): The neural network model consisting of linear layers, ReLU activations, and dropout.
-        loss_fn (nn.CrossEntropyLoss): The loss function used for training and evaluation.
-        accuracy (torchmetrics.Accuracy): The accuracy metric used for evaluation.
+        Attributes
+        ----------
+            lr : float
+    Learning rate for the optimizer.
+            model : nn.Sequential
+    The neural network model consisting of linear layers, ReLU activations, and dropout.
+            loss_fn : nn.CrossEntropyLoss
+    The loss function used for training and evaluation.
+            accuracy : torchmetrics.Accuracy
+    The accuracy metric used for evaluation.
 
-    Methods:
-        forward(x):
-            Performs a forward pass through the network.
-
-        training_step(batch):
-            Defines the training step, including the forward pass and loss computation.
-
-        test_step(batch):
-            Defines the test step, including the forward pass and loss computation.
-
-        validation_step(batch):
-            Defines the validation step, including the forward pass and loss computation.
-
-        configure_optimizers():
-            Configures the optimizer for training.
+        Methods
+        -------
+            forward(x):
+                Performs a forward pass through the network.
+            training_step(batch, batch_idx):
+                Defines the training step, including the forward pass and loss computation.
+            test_step(batch, batch_idx):
+                Defines the test step, including the forward pass and loss computation.
+            validation_step(batch, batch_idx):
+                Defines the validation step, including the forward pass and loss computation.
+            configure_optimizers():
+                Configures the optimizer for training.
     """
 
     def __init__(self, fixed_params: FixedParams, optuna_params: OptunaParams):
@@ -54,7 +59,9 @@ class TwoLayerModel(pl.LightningModule):
             nn.Linear(optuna_params.hidden_size_3, fixed_params.output_size),
         )
         self.loss_fn = nn.CrossEntropyLoss()
-        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=fixed_params.output_size)
+        self.accuracy = torchmetrics.Accuracy(
+            task="multiclass", num_classes=fixed_params.output_size
+        )
 
     def forward(self, x):
         return self.model(x)

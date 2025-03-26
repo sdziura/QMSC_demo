@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 class Train:
     """
     A class used to train a machine learning model using PyTorch Lightning and MLFlow for experiment tracking.
+
     Attributes
     ----------
     fixed_params : FixedParams
@@ -29,23 +30,27 @@ class Train:
         The input data tensor.
     y : torch.Tensor
         The labels tensor.
+
     Methods
     -------
     __init__():
         Initializes the Train class, sets up MLFlow tracking, and loads data.
-    load_data(file_path: str = "hmm_gaussian_chains.h5") -> None:
-        Loads data from an HDF5 file and preprocesses it.
     train(optuna_params: OptunaParams) -> float:
         Trains the model using cross-validation.
     train_fold(fold: int, train_loader: DataLoader, val_loader: DataLoader, optuna_params: OptunaParams) -> float:
         Trains the model for a specific fold and logs the results.
     log_mlflow_model(model: pl.LightningModule) -> None:
         Logs the trained model to MLFlow.
-    get_dataloader(dataset: TensorDataset, indices: np.ndarray, shuffle: bool, batch_size: int) -> DataLoader:
-        Creates a DataLoader for a given dataset and indices.
+    objective(trial):
+        Defines the objective function for Optuna hyperparameter optimization.
+    optimize_hyperparameters() -> dict:
+        Optimizes hyperparameters using Optuna and returns the best parameters.
     """
 
     def __init__(self):
+        """
+        Initializes the Train class, sets up MLFlow tracking, and loads data.
+        """
         self.fixed_params = FixedParams()
         mlflow.set_tracking_uri("http://127.0.0.1:8080")
         mlflow.set_experiment(self.fixed_params.experiment_name)
@@ -54,7 +59,19 @@ class Train:
         self.X, self.y = load_data(self.fixed_params.dataset_file)
 
     def train(self, optuna_params: OptunaParams) -> float:
-        # Convert dataset into a list of indices for cross-validation
+        """
+        Trains the model using cross-validation.
+
+        Parameters
+        ----------
+        optuna_params : OptunaParams
+            An instance of OptunaParams containing hyperparameters to be optimized.
+
+        Returns
+        -------
+        float
+            The average validation loss across all folds.
+        """
         dataset = TensorDataset(self.X, self.y)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
@@ -91,6 +108,25 @@ class Train:
         val_loader: DataLoader,
         optuna_params: OptunaParams,
     ) -> float:
+        """
+        Trains the model for a specific fold and logs the results.
+
+        Parameters
+        ----------
+        fold : int
+            The fold number.
+        train_loader : DataLoader
+            The DataLoader for the training data.
+        val_loader : DataLoader
+            The DataLoader for the validation data.
+        optuna_params : OptunaParams
+            An instance of OptunaParams containing hyperparameters to be optimized.
+
+        Returns
+        -------
+        float
+            The validation loss for the fold.
+        """
         model = TwoLayerModel(
             fixed_params=self.fixed_params, optuna_params=optuna_params
         )
@@ -128,6 +164,14 @@ class Train:
         return val_loss
 
     def log_mlflow_model(self, model: pl.LightningModule) -> None:
+        """
+        Logs the trained model to MLFlow.
+
+        Parameters
+        ----------
+        model : pl.LightningModule
+            The trained model to be logged.
+        """
         input_example = torch.randn(1, self.X.shape[1])
         input_example_np = input_example.numpy()
         signature = infer_signature(
@@ -142,7 +186,19 @@ class Train:
         )
 
     def objective(self, trial):
-        # Suggest hyperparameters for Optuna to optimize
+        """
+        Defines the objective function for Optuna hyperparameter optimization.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            A trial object that suggests hyperparameters.
+
+        Returns
+        -------
+        float
+            The average validation loss for the suggested hyperparameters.
+        """
         optuna_params = OptunaParams(
             learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-1),
             hidden_size_1=trial.suggest_int("hidden_size_1", 16, 128, step=16),
@@ -155,6 +211,14 @@ class Train:
         return self.train(optuna_params)
 
     def optimize_hyperparameters(self):
+        """
+        Optimizes hyperparameters using Optuna and returns the best parameters.
+
+        Returns
+        -------
+        dict
+            The best hyperparameters found by Optuna.
+        """
         study = optuna.create_study(direction="minimize")
         study.optimize(self.objective, n_trials=self.fixed_params.optuna_trials)
         return study.best_params
