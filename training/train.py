@@ -5,7 +5,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.model_selection import StratifiedKFold
 import mlflow
-from mlflow.models import infer_signature
 import optuna
 from pytorch_lightning.callbacks import EarlyStopping
 
@@ -13,6 +12,7 @@ import logging
 from config import FixedParams, OptunaParams
 from models.model import TwoLayerModel
 from utils.data_loader import load_data, get_dataloader
+from utils.mlflow_utils import log_mlflow_model, log_mlflow_params
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,9 +39,7 @@ class Train:
         Trains the model using cross-validation.
     train_fold(fold: int, train_loader: DataLoader, val_loader: DataLoader, optuna_params: OptunaParams) -> float:
         Trains the model for a specific fold and logs the results.
-    log_mlflow_model(model: pl.LightningModule) -> None:
-        Logs the trained model to MLFlow.
-    objective(trial):
+    objective(trial) -> float:
         Defines the objective function for Optuna hyperparameter optimization.
     optimize_hyperparameters() -> dict:
         Optimizes hyperparameters using Optuna and returns the best parameters.
@@ -138,8 +136,8 @@ class Train:
         )
 
         with mlflow.start_run(run_name=f"Fold_{fold+1}"):
-            mlflow.log_params(self.fixed_params.__dict__)
-            mlflow.log_params(optuna_params.__dict__)
+            log_mlflow_params(self.fixed_params.__dict__)
+            log_mlflow_params(optuna_params.__dict__)
             trainer = pl.Trainer(
                 max_epochs=self.fixed_params.max_epochs,
                 accelerator="auto",
@@ -163,29 +161,7 @@ class Train:
 
         return val_loss
 
-    def log_mlflow_model(self, model: pl.LightningModule) -> None:
-        """
-        Logs the trained model to MLFlow.
-
-        Parameters
-        ----------
-        model : pl.LightningModule
-            The trained model to be logged.
-        """
-        input_example = torch.randn(1, self.X.shape[1])
-        input_example_np = input_example.numpy()
-        signature = infer_signature(
-            input_example_np, model(input_example).detach().numpy()
-        )
-
-        mlflow.pytorch.log_model(
-            model,
-            "best_model",
-            input_example=input_example_np,
-            signature=signature,
-        )
-
-    def objective(self, trial):
+    def objective(self, trial) -> float:
         """
         Defines the objective function for Optuna hyperparameter optimization.
 
@@ -210,7 +186,7 @@ class Train:
 
         return self.train(optuna_params)
 
-    def optimize_hyperparameters(self):
+    def optimize_hyperparameters(self) -> dict:
         """
         Optimizes hyperparameters using Optuna and returns the best parameters.
 
