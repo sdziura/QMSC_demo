@@ -1,5 +1,5 @@
 **/__pycache__/
 /hmm_gaussian_chains.h5
 /lightning_logs
-/logs
+server/logs
 /checkpoints
