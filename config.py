@@ -37,7 +37,7 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 500
-    experiment_name: str = "HMM_Classification_todelete"
+    experiment_name: str = "HMM_Classification_3"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     optuna_trials: int = 50
 

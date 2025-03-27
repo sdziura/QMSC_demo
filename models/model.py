@@ -70,7 +70,7 @@ class TwoLayerModel(pl.LightningModule):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_epoch=True, on_step=False)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -79,8 +79,8 @@ class TwoLayerModel(pl.LightningModule):
         loss = self.loss_fn(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        self.log("test_loss", loss)
-        self.log("test_acc", acc)
+        self.log("test_loss", loss, on_epoch=True, on_step=False)
+        self.log("test_acc", acc, on_epoch=True, on_step=False)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -89,8 +89,8 @@ class TwoLayerModel(pl.LightningModule):
         loss = self.loss_fn(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        self.log("val_loss", loss, prog_bar=True)
-        self.log("val_acc", acc, prog_bar=True)
+        self.log("val_loss", loss, prog_bar=True, on_epoch=True, on_step=False)
+        self.log("val_acc", acc, prog_bar=True, on_epoch=True, on_step=False)
         return loss
 
     def configure_optimizers(self):
