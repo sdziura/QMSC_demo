@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
@@ -12,7 +11,7 @@ import logging
 from config import FixedParams, OptunaParams
 from models.model import TwoLayerModel
 from utils.data_loader import load_data, get_dataloader
-from utils.mlflow_utils import log_mlflow_model, log_mlflow_params
+from utils.mlflow_utils import log_mlflow_params
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ class Train:
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
 
-    def train(self, optuna_params: OptunaParams) -> float:
+    def train(self, optuna_params: OptunaParams, trial_number: int) -> float:
         """
         Trains the model using cross-validation.
 
@@ -64,12 +63,16 @@ class Train:
         ----------
         optuna_params : OptunaParams
             An instance of OptunaParams containing hyperparameters to be optimized.
+        trial_number : int
+            The Optuna trial number.
 
         Returns
         -------
         float
             The average validation loss across all folds.
         """
+        run_name = f"CrossValidation_Experiment_Trial_{trial_number}"
+        mlflow.start_run(run_name=run_name)
         dataset = TensorDataset(self.X, self.y)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
@@ -135,7 +138,7 @@ class Train:
             monitor="val_loss", patience=3, verbose=True, mode="min"
         )
 
-        with mlflow.start_run(run_name=f"Fold_{fold+1}"):
+        with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(optuna_params.__dict__)
             trainer = pl.Trainer(
@@ -176,15 +179,16 @@ class Train:
             The average validation loss for the suggested hyperparameters.
         """
         optuna_params = OptunaParams(
-            learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-1),
-            hidden_size_1=trial.suggest_int("hidden_size_1", 16, 128, step=16),
-            hidden_size_2=trial.suggest_int("hidden_size_2", 16, 128, step=16),
-            hidden_size_3=trial.suggest_int("hidden_size_3", 16, 128, step=16),
+            learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-3),
+            hidden_size_1=trial.suggest_categorical("hidden_size_1", [16, 32, 64, 128]),
+            hidden_size_2=trial.suggest_categorical("hidden_size_2", [16, 32, 64, 128]),
+            hidden_size_3=trial.suggest_categorical("hidden_size_3", [16, 32, 64, 128]),
             batch_size=trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
             dropout=trial.suggest_uniform("dropout", 0.1, 0.5),
         )
 
-        return self.train(optuna_params)
+        # Pass the trial number to the train method
+        return self.train(optuna_params, trial_number=trial.number)
 
     def optimize_hyperparameters(self) -> dict:
         """
