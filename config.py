@@ -14,8 +14,6 @@ class FixedParams:
         Random state for reproducibility.
     val_check_interval : int
         Interval for validation checks.
-    log_every_n_steps : int
-        Interval for logging.
     input_size : int
         Size of the input features.
     output_size : int
@@ -33,7 +31,6 @@ class FixedParams:
     folds: int = 5
     random_state: int = 42
     val_check_interval: int = 1
-    log_every_n_steps: int = 1
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 500
@@ -63,9 +60,9 @@ class OptunaParams:
         Dropout rate for regularization.
     """
 
-    learning_rate: float = 0.001
+    learning_rate: float = 0.0005
     hidden_size_1: int = 32
     hidden_size_2: int = 64
     hidden_size_3: int = 32
     batch_size: int = 32
-    dropout: float = 0.5
+    dropout: float = 0.2

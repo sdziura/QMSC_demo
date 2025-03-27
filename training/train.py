@@ -81,6 +81,7 @@ class Train:
         )
 
         val_losses = []
+        val_accs = []
         for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
             logger.info(f"Fold {fold+1}")
 
@@ -97,14 +98,30 @@ class Train:
                 batch_size=optuna_params.batch_size,
             )
 
-            val_loss = self.train_fold(fold, train_loader, val_loader, optuna_params)
+            val_loss, val_acc = self.train_fold(
+                fold, trial_number, train_loader, val_loader, optuna_params
+            )
             val_losses.append(val_loss)
+            val_accs.append(val_acc)
 
-        return np.mean(val_losses)
+            mean_val_loss = np.mean(val_losses)
+            std_val_loss = np.std(val_losses)
+
+            mean_val_acc = np.mean(val_accs)
+            std_val_acc = np.std(val_accs)
+
+            # Log aggregated results
+            mlflow.log_metric("val_loss_mean", mean_val_loss)
+            mlflow.log_metric("val_loss_std", std_val_loss)
+            mlflow.log_metric("val_acc_mean", mean_val_acc)
+            mlflow.log_metric("val_acc_std", std_val_acc)
+
+        return mean_val_loss
 
     def train_fold(
         self,
         fold: int,
+        trial_number: int,
         train_loader: DataLoader,
         val_loader: DataLoader,
         optuna_params: OptunaParams,
@@ -132,7 +149,10 @@ class Train:
             fixed_params=self.fixed_params, optuna_params=optuna_params
         )
 
-        tb_logger = TensorBoardLogger("logs/", name="my_model")
+        tb_run_name = (
+            f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
+        )
+        tb_logger = TensorBoardLogger("server/logs/", name=tb_run_name)
 
         early_stopping = EarlyStopping(
             monitor="val_loss", patience=3, verbose=True, mode="min"
@@ -145,7 +165,6 @@ class Train:
                 max_epochs=self.fixed_params.max_epochs,
                 accelerator="auto",
                 val_check_interval=self.fixed_params.val_check_interval,
-                log_every_n_steps=self.fixed_params.log_every_n_steps,
                 logger=tb_logger,
                 callbacks=[
                     pl.callbacks.ModelCheckpoint(
@@ -161,8 +180,9 @@ class Train:
 
             trainer.fit(model, train_loader, val_loader)
             val_loss = trainer.callback_metrics["val_loss"].item()
+            val_acc = trainer.callback_metrics["val_acc"].item()
 
-        return val_loss
+        return val_loss, val_acc
 
     def objective(self, trial) -> float:
         """
@@ -179,12 +199,12 @@ class Train:
             The average validation loss for the suggested hyperparameters.
         """
         optuna_params = OptunaParams(
-            learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-3),
+            # learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-3),
             hidden_size_1=trial.suggest_categorical("hidden_size_1", [16, 32, 64, 128]),
             hidden_size_2=trial.suggest_categorical("hidden_size_2", [16, 32, 64, 128]),
             hidden_size_3=trial.suggest_categorical("hidden_size_3", [16, 32, 64, 128]),
             batch_size=trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
-            dropout=trial.suggest_uniform("dropout", 0.1, 0.5),
+            # dropout=trial.suggest_uniform("dropout", 0.1, 0.5),
         )
 
         # Pass the trial number to the train method
