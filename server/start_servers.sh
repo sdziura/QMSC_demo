@@ -1,32 +1,30 @@
 #!/bin/bash
 
 # Set paths for logs
-MLFLOW_LOG_DIR="mlruns"
-TB_LOG_DIR="tb_logs"
+MLFLOW_LOG_DIR="server/mlruns"
+TB_LOG_DIR="server/tb_logs"
 
 # Ensure log directories exist
 mkdir -p $MLFLOW_LOG_DIR
 mkdir -p $TB_LOG_DIR
 
-# Start MLflow server in the background and redirect output to a log file
+# Start MLflow server in foreground
 echo "Starting MLflow server..."
-mlflow server --host 127.0.0.1 --port 8080 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./$MLFLOW_LOG_DIR > mlflow.log 2>&1 &
-MLFLOW_PID=$!
-echo "MLflow server started with PID $MLFLOW_PID"
+mlflow server --host 127.0.0.1 --port 8080 \
+  --backend-store-uri sqlite:///server/mlflow.db \
+  --default-artifact-root ./$MLFLOW_LOG_DIR | tee server/logs/mlflow.log &
 
-# Start TensorBoard server in the background and redirect output to a log file
-echo "Starting TensorBoard..."
-tensorboard --logdir $TB_LOG_DIR --port 6006 > tensorboard.log 2>&1 &
-TB_PID=$!
-echo "TensorBoard server started with PID $TB_PID"
+# Wait for MLflow to start
+echo "Waiting for MLflow server to start..."
+until nc -z 127.0.0.1 8080; do
+  sleep 1
+done
+echo "MLflow server is ready."
 
-# Save PIDs to files for stopping later
-echo $MLFLOW_PID > mlflow.pid
-echo $TB_PID > tensorboard.pid
-
-# Display URLs
-echo "MLflow is running at http://127.0.0.1:8080"
-echo "TensorBoard is running at http://localhost:6006"
-
-# Disown processes to keep them running after script exits
-disown
+# Start TensorBoard in foreground
+echo "Waiting for TensorBoard server to start..."
+tensorboard --logdir $TB_LOG_DIR --port 6006 | tee server/logs/tensorboard.log
+until nc -z 127.0.0.1 6006; do
+  sleep 1
+done
+echo "TensorBoard server is ready."

@@ -2,4 +2,9 @@
 /hmm_gaussian_chains.h5
 /lightning_logs
 server/logs
+server/tb_logs
+server/mlruns
 /checkpoints
+*.pid
+*.log
+*.db
