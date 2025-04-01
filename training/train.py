@@ -82,6 +82,8 @@ class Train:
         val_losses = []
         val_accs = []
         with mlflow.start_run(run_name=run_name):
+            log_mlflow_params(self.fixed_params.__dict__)
+            log_mlflow_params(optuna_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
                 logger.info(f"Fold {fold+1}")
 
@@ -104,17 +106,17 @@ class Train:
                 val_losses.append(val_loss)
                 val_accs.append(val_acc)
 
-                mean_val_loss = np.mean(val_losses)
-                std_val_loss = np.std(val_losses)
+            mean_val_loss = np.mean(val_losses)
+            std_val_loss = np.std(val_losses)
 
-                mean_val_acc = np.mean(val_accs)
-                std_val_acc = np.std(val_accs)
+            mean_val_acc = np.mean(val_accs)
+            std_val_acc = np.std(val_accs)
 
-                # Log aggregated results
-                mlflow.log_metric("val_loss_mean", mean_val_loss)
-                mlflow.log_metric("val_loss_std", std_val_loss)
-                mlflow.log_metric("val_acc_mean", mean_val_acc)
-                mlflow.log_metric("val_acc_std", std_val_acc)
+            # Log aggregated results
+            mlflow.log_metric("val_loss", mean_val_loss)
+            mlflow.log_metric("val_loss_std", std_val_loss)
+            mlflow.log_metric("val_acc", mean_val_acc)
+            mlflow.log_metric("val_acc_std", std_val_acc)
 
         return mean_val_loss
 
