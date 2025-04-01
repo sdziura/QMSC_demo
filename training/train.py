@@ -72,7 +72,6 @@ class Train:
             The average validation loss across all folds.
         """
         run_name = f"CrossValidation_Experiment_Trial_{trial_number}"
-        mlflow.start_run(run_name=run_name)
         dataset = TensorDataset(self.X, self.y)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
@@ -82,39 +81,40 @@ class Train:
 
         val_losses = []
         val_accs = []
-        for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
-            logger.info(f"Fold {fold+1}")
+        with mlflow.start_run(run_name=run_name):
+            for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
+                logger.info(f"Fold {fold+1}")
 
-            train_loader = get_dataloader(
-                dataset=dataset,
-                indices=train_idx,
-                shuffle=True,
-                batch_size=optuna_params.batch_size,
-            )
-            val_loader = get_dataloader(
-                dataset=dataset,
-                indices=val_idx,
-                shuffle=False,
-                batch_size=optuna_params.batch_size,
-            )
+                train_loader = get_dataloader(
+                    dataset=dataset,
+                    indices=train_idx,
+                    shuffle=True,
+                    batch_size=optuna_params.batch_size,
+                )
+                val_loader = get_dataloader(
+                    dataset=dataset,
+                    indices=val_idx,
+                    shuffle=False,
+                    batch_size=optuna_params.batch_size,
+                )
 
-            val_loss, val_acc = self.train_fold(
-                fold, trial_number, train_loader, val_loader, optuna_params
-            )
-            val_losses.append(val_loss)
-            val_accs.append(val_acc)
+                val_loss, val_acc = self.train_fold(
+                    fold, trial_number, train_loader, val_loader, optuna_params
+                )
+                val_losses.append(val_loss)
+                val_accs.append(val_acc)
 
-            mean_val_loss = np.mean(val_losses)
-            std_val_loss = np.std(val_losses)
+                mean_val_loss = np.mean(val_losses)
+                std_val_loss = np.std(val_losses)
 
-            mean_val_acc = np.mean(val_accs)
-            std_val_acc = np.std(val_accs)
+                mean_val_acc = np.mean(val_accs)
+                std_val_acc = np.std(val_accs)
 
-            # Log aggregated results
-            mlflow.log_metric("val_loss_mean", mean_val_loss)
-            mlflow.log_metric("val_loss_std", std_val_loss)
-            mlflow.log_metric("val_acc_mean", mean_val_acc)
-            mlflow.log_metric("val_acc_std", std_val_acc)
+                # Log aggregated results
+                mlflow.log_metric("val_loss_mean", mean_val_loss)
+                mlflow.log_metric("val_loss_std", std_val_loss)
+                mlflow.log_metric("val_acc_mean", mean_val_acc)
+                mlflow.log_metric("val_acc_std", std_val_acc)
 
         return mean_val_loss
 
@@ -152,7 +152,7 @@ class Train:
         tb_run_name = (
             f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
         )
-        tb_logger = TensorBoardLogger("server/logs/", name=tb_run_name)
+        tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
 
         early_stopping = EarlyStopping(
             monitor="val_loss", patience=3, verbose=True, mode="min"

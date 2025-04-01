@@ -17,7 +17,7 @@ def main():
     logger.info(f"Best hyperparameters: {best_params}")
 
     optuna_params = OptunaParams(**best_params)
-    trainer.train(optuna_params)
+    trainer.train(optuna_params, trial_number=0)
 
     best_model = TwoLayerModel(
         fixed_params=trainer.fixed_params, optuna_params=optuna_params
