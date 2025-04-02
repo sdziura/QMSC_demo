@@ -34,7 +34,7 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 300
-    experiment_name: str = "HMM_Classification_0"
+    experiment_name: str = "HMM_Classification_to_delete"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 10

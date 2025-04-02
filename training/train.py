@@ -33,8 +33,8 @@ class Trainer:
     Methods
     -------
     __init__():
-        Initializes the Train class, sets up MLFlow tracking, and loads data.
-    train(optuna_params: OptunaParams) -> float:
+        Initializes the Trainer class, sets up MLFlow tracking, and loads data.
+    train(optuna_params: OptunaParams, trial_number: int) -> float:
         Trains the model using cross-validation.
     train_fold(fold: int, train_loader: DataLoader, val_loader: DataLoader, optuna_params: OptunaParams) -> float:
         Trains the model for a specific fold and logs the results.
@@ -46,7 +46,7 @@ class Trainer:
 
     def __init__(self):
         """
-        Initializes the Train class, sets up MLFlow tracking, and loads data.
+        Initializes the Trainer class, sets up MLFlow tracking, and loads data.
         """
         self.fixed_params = FixedParams()
         mlflow.set_tracking_uri(self.fixed_params.mlflow_uri)
