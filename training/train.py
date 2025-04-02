@@ -49,13 +49,13 @@ class Trainer:
         Initializes the Train class, sets up MLFlow tracking, and loads data.
         """
         self.fixed_params = FixedParams()
-        mlflow.set_tracking_uri("http://127.0.0.1:8080")
+        mlflow.set_tracking_uri(self.fixed_params.mlflow_uri)
         mlflow.set_experiment(self.fixed_params.experiment_name)
         mlflow.pytorch.autolog()
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
 
-    def train(self, optuna_params: OptunaParams, trial_number: int) -> float:
+    def train(self, optuna_params: OptunaParams, trial_number: int = 0) -> float:
         """
         Trains the model using cross-validation.
 
