@@ -1,6 +1,6 @@
 import logging
 from models.model import TwoLayerModel
-from training.train import Train
+from training.train import Trainer
 from config import OptunaParams
 from utils.mlflow_utils import log_mlflow_model, log_mlflow_params
 
@@ -12,7 +12,7 @@ def main():
     """
     Main function to run the training process.
     """
-    trainer = Train()
+    trainer = Trainer()
     best_params = trainer.optimize_hyperparameters()
     logger.info(f"Best hyperparameters: {best_params}")
 

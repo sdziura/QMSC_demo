@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class Train:
+class Trainer:
     """
     A class used to train a machine learning model using PyTorch Lightning and MLFlow for experiment tracking.
 
