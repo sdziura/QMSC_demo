@@ -33,11 +33,11 @@ class FixedParams:
     val_check_interval: int = 1
     input_size: int = 20
     output_size: int = 2
-    max_epochs: int = 300
+    max_epochs: int = 1000
     experiment_name: str = "HMM_Classification_to_delete"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
-    optuna_trials: int = 10
+    optuna_trials: int = 50
 
 
 @dataclass
@@ -64,6 +64,6 @@ class OptunaParams:
     learning_rate: float = 0.0005
     hidden_size_1: int = 32
     hidden_size_2: int = 64
-    hidden_size_3: int = 32
+    # hidden_size_3: int = 32
     batch_size: int = 32
     dropout: float = 0.2

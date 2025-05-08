@@ -52,11 +52,11 @@ class TwoLayerModel(pl.LightningModule):
             nn.Dropout(optuna_params.dropout),
             nn.Linear(optuna_params.hidden_size_1, optuna_params.hidden_size_2),
             nn.ReLU(),
+            # nn.Dropout(optuna_params.dropout),
+            # nn.Linear(optuna_params.hidden_size_2, optuna_params.hidden_size_3),
+            # nn.ReLU(),
             nn.Dropout(optuna_params.dropout),
-            nn.Linear(optuna_params.hidden_size_2, optuna_params.hidden_size_3),
-            nn.ReLU(),
-            nn.Dropout(optuna_params.dropout),
-            nn.Linear(optuna_params.hidden_size_3, fixed_params.output_size),
+            nn.Linear(optuna_params.hidden_size_2, fixed_params.output_size),
         )
         self.loss_fn = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy(

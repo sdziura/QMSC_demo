@@ -4,12 +4,11 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.model_selection import StratifiedKFold
 import mlflow
-import optuna
 from pytorch_lightning.callbacks import EarlyStopping
 
 import logging
 from config import FixedParams, OptunaParams
-from models.model import TwoLayerModel
+from models.model_NN import TwoLayerModel
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params
 
@@ -185,42 +184,3 @@ class Trainer:
             val_acc = trainer.callback_metrics["val_acc"].item()
 
         return val_loss, val_acc
-
-    def objective(self, trial) -> float:
-        """
-        Defines the objective function for Optuna hyperparameter optimization.
-
-        Parameters
-        ----------
-        trial : optuna.trial.Trial
-            A trial object that suggests hyperparameters.
-
-        Returns
-        -------
-        float
-            The average validation loss for the suggested hyperparameters.
-        """
-        optuna_params = OptunaParams(
-            # learning_rate=trial.suggest_loguniform("learning_rate", 1e-5, 1e-3),
-            hidden_size_1=trial.suggest_categorical("hidden_size_1", [16, 32, 64, 128]),
-            hidden_size_2=trial.suggest_categorical("hidden_size_2", [16, 32, 64, 128]),
-            hidden_size_3=trial.suggest_categorical("hidden_size_3", [16, 32, 64, 128]),
-            batch_size=trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
-            # dropout=trial.suggest_uniform("dropout", 0.1, 0.5),
-        )
-
-        # Pass the trial number to the train method
-        return self.train(optuna_params, trial_number=trial.number)
-
-    def optimize_hyperparameters(self) -> dict:
-        """
-        Optimizes hyperparameters using Optuna and returns the best parameters.
-
-        Returns
-        -------
-        dict
-            The best hyperparameters found by Optuna.
-        """
-        study = optuna.create_study(direction="minimize")
-        study.optimize(self.objective, n_trials=self.fixed_params.optuna_trials)
-        return study.best_params
