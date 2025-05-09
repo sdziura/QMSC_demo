@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import ndarray
 from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -71,7 +72,6 @@ class Trainer:
             The average validation loss across all folds.
         """
         run_name = f"CrossValidation_Experiment_Trial_{trial_number}"
-        dataset = TensorDataset(self.X, self.y)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
             shuffle=True,
@@ -85,22 +85,8 @@ class Trainer:
             log_mlflow_params(optuna_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
                 logger.info(f"Fold {fold+1}")
-
-                train_loader = get_dataloader(
-                    dataset=dataset,
-                    indices=train_idx,
-                    shuffle=True,
-                    batch_size=optuna_params.batch_size,
-                )
-                val_loader = get_dataloader(
-                    dataset=dataset,
-                    indices=val_idx,
-                    shuffle=False,
-                    batch_size=optuna_params.batch_size,
-                )
-
                 val_loss, val_acc = self.train_fold(
-                    fold, trial_number, train_loader, val_loader, optuna_params
+                    fold, train_idx, val_idx, trial_number, optuna_params
                 )
                 val_losses.append(val_loss)
                 val_accs.append(val_acc)
@@ -122,11 +108,11 @@ class Trainer:
     def train_fold(
         self,
         fold: int,
+        train_idx: np.ndarray,
+        val_idx: np.ndarray,
         trial_number: int,
-        train_loader: DataLoader,
-        val_loader: DataLoader,
         optuna_params: OptunaParams,
-    ) -> float:
+    ) -> tuple[float, float]:
         """
         Trains the model for a specific fold and logs the results.
 
@@ -134,18 +120,34 @@ class Trainer:
         ----------
         fold : int
             The fold number.
-        train_loader : DataLoader
-            The DataLoader for the training data.
-        val_loader : DataLoader
-            The DataLoader for the validation data.
+        train_idx : np.ndarray
+            The indices for the training data.
+        val_idx : np.ndarray
+            The indices for the validation data.
+        trial_number : int
+            The Optuna trial number.
         optuna_params : OptunaParams
             An instance of OptunaParams containing hyperparameters to be optimized.
 
         Returns
         -------
-        float
-            The validation loss for the fold.
+        tuple[float, float]
+            The validation loss and validation accuracy for the fold.
         """
+        dataset = TensorDataset(self.X, self.y)
+        train_loader = get_dataloader(
+            dataset=dataset,
+            indices=train_idx,
+            shuffle=True,
+            batch_size=optuna_params.batch_size,
+        )
+        val_loader = get_dataloader(
+            dataset=dataset,
+            indices=val_idx,
+            shuffle=False,
+            batch_size=optuna_params.batch_size,
+        )
+
         model = TwoLayerModel(
             fixed_params=self.fixed_params, optuna_params=optuna_params
         )
