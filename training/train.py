@@ -3,13 +3,15 @@ from numpy import ndarray
 from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
-from sklearn.model_selection import StratifiedKFold
-import mlflow
 from pytorch_lightning.callbacks import EarlyStopping
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
+import mlflow
 
 import logging
-from config import FixedParams, OptunaParams
+from config import FixedParams, ModelParams, NNParams, SVMParams
 from models.model_NN import TwoLayerModel
+from models.model_SVM import SVM
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params
 
@@ -52,10 +54,16 @@ class Trainer:
         mlflow.set_tracking_uri(self.fixed_params.mlflow_uri)
         mlflow.set_experiment(self.fixed_params.experiment_name)
         mlflow.pytorch.autolog()
+        self.train_fold_dispatch = {
+            "svm": self.train_fold_SVM,
+            "nn": self.train_fold_NN,
+        }
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
 
-    def train(self, optuna_params: OptunaParams, trial_number: int = 0) -> float:
+    def train(
+        self, model_type: str, model_params: ModelParams, trial_number: int = 0
+    ) -> float:
         """
         Trains the model using cross-validation.
 
@@ -71,7 +79,10 @@ class Trainer:
         float
             The average validation loss across all folds.
         """
-        run_name = f"CrossValidation_Experiment_Trial_{trial_number}"
+        if model_type not in self.train_fold_dispatch:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+        run_name = f"CrossValidation_Experiment_{model_type}_Trial_{trial_number}"
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
             shuffle=True,
@@ -82,11 +93,11 @@ class Trainer:
         val_accs = []
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
-            log_mlflow_params(optuna_params.__dict__)
+            log_mlflow_params(model_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
                 logger.info(f"Fold {fold+1}")
-                val_loss, val_acc = self.train_fold(
-                    fold, train_idx, val_idx, trial_number, optuna_params
+                val_loss, val_acc = self.train_fold_dispatch[model_type](
+                    fold, train_idx, val_idx, trial_number, model_params
                 )
                 val_losses.append(val_loss)
                 val_accs.append(val_acc)
@@ -103,15 +114,15 @@ class Trainer:
             mlflow.log_metric("val_acc", mean_val_acc)
             mlflow.log_metric("val_acc_std", std_val_acc)
 
-        return mean_val_loss
+        return mean_val_loss, mean_val_acc
 
-    def train_fold(
+    def train_fold_NN(
         self,
         fold: int,
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
-        optuna_params: OptunaParams,
+        NN_params: NNParams,
     ) -> tuple[float, float]:
         """
         Trains the model for a specific fold and logs the results.
@@ -139,18 +150,16 @@ class Trainer:
             dataset=dataset,
             indices=train_idx,
             shuffle=True,
-            batch_size=optuna_params.batch_size,
+            batch_size=NN_params.batch_size,
         )
         val_loader = get_dataloader(
             dataset=dataset,
             indices=val_idx,
             shuffle=False,
-            batch_size=optuna_params.batch_size,
+            batch_size=NN_params.batch_size,
         )
 
-        model = TwoLayerModel(
-            fixed_params=self.fixed_params, optuna_params=optuna_params
-        )
+        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params)
 
         tb_run_name = (
             f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
@@ -162,8 +171,6 @@ class Trainer:
         )
 
         with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
-            log_mlflow_params(self.fixed_params.__dict__)
-            log_mlflow_params(optuna_params.__dict__)
             trainer = pl.Trainer(
                 max_epochs=self.fixed_params.max_epochs,
                 accelerator="auto",
@@ -186,3 +193,27 @@ class Trainer:
             val_acc = trainer.callback_metrics["val_acc"].item()
 
         return val_loss, val_acc
+
+    def train_fold_SVM(
+        self,
+        fold: int,
+        train_idx: np.ndarray,
+        val_idx: np.ndarray,
+        trial_number: int,
+        SVM_params: SVMParams,
+    ) -> tuple[float, float]:
+
+        model = SVM(fixed_params=self.fixed_params, SVM_params=SVM_params)
+
+        # tb_run_name = (
+        #     f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
+        # )
+        # tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
+
+        with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
+            model.fit(self.X[train_idx], self.y[train_idx])
+            y_pred = model.predict(self.X[val_idx])
+
+            val_acc = accuracy_score(self.y[val_idx], y_pred)
+
+        return 0, val_acc

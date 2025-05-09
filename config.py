@@ -34,14 +34,19 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 1000
-    experiment_name: str = "HMM_Classification_to_delete"
+    experiment_name: str = "HMM_Classification_SVM"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 50
 
 
 @dataclass
-class OptunaParams:
+class ModelParams:
+    pass  # acts as a base type for polymorphism
+
+
+@dataclass
+class NNParams(ModelParams):
     """
     A dataclass containing hyperparameters to be optimized by Optuna.
 
@@ -67,3 +72,11 @@ class OptunaParams:
     # hidden_size_3: int = 32
     batch_size: int = 32
     dropout: float = 0.2
+
+
+@dataclass
+class SVMParams(ModelParams):
+    C: float = 1.0
+    kernel: str = "rbf"
+    gamma: str = "scale"
+    degree: int = 3

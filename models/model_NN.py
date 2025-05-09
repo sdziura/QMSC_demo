@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 import torchmetrics
 
-from config import FixedParams, OptunaParams
+from config import FixedParams, ModelParams, NNParams
 
 
 class TwoLayerModel(pl.LightningModule):
@@ -43,20 +43,17 @@ class TwoLayerModel(pl.LightningModule):
                 Configures the optimizer for training.
     """
 
-    def __init__(self, fixed_params: FixedParams, optuna_params: OptunaParams):
+    def __init__(self, fixed_params: FixedParams, NN_params: NNParams):
         super(TwoLayerModel, self).__init__()
-        self.lr = optuna_params.learning_rate
+        self.lr = NN_params.learning_rate
         self.model = nn.Sequential(
-            nn.Linear(fixed_params.input_size, optuna_params.hidden_size_1),
+            nn.Linear(fixed_params.input_size, NN_params.hidden_size_1),
             nn.ReLU(),
-            nn.Dropout(optuna_params.dropout),
-            nn.Linear(optuna_params.hidden_size_1, optuna_params.hidden_size_2),
+            nn.Dropout(NN_params.dropout),
+            nn.Linear(NN_params.hidden_size_1, NN_params.hidden_size_2),
             nn.ReLU(),
-            # nn.Dropout(optuna_params.dropout),
-            # nn.Linear(optuna_params.hidden_size_2, optuna_params.hidden_size_3),
-            # nn.ReLU(),
-            nn.Dropout(optuna_params.dropout),
-            nn.Linear(optuna_params.hidden_size_2, fixed_params.output_size),
+            nn.Dropout(NN_params.dropout),
+            nn.Linear(NN_params.hidden_size_2, fixed_params.output_size),
         )
         self.loss_fn = nn.CrossEntropyLoss()
         self.accuracy = torchmetrics.Accuracy(
