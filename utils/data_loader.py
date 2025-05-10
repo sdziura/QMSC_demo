@@ -9,8 +9,8 @@ def load_data(file_path: str):
         labels, observations = f["label"][:], f["observed"][:]
 
     observations = observations.reshape(observations.shape[0], -1)
-    X = torch.tensor(observations, dtype=torch.float32)
-    y = torch.tensor(labels, dtype=torch.long)
+    X = torch.tensor(observations, dtype=torch.float32).to("cuda")
+    y = torch.tensor(labels, dtype=torch.long).to("cuda")
 
     return X, y
 
@@ -18,6 +18,25 @@ def load_data(file_path: str):
 def get_dataloader(
     dataset: TensorDataset, indices: np.ndarray, shuffle: bool, batch_size: int
 ) -> DataLoader:
+    """
+    Creates a DataLoader for a given dataset and indices.
+
+    Parameters
+    ----------
+    dataset : TensorDataset
+        The dataset to load.
+    indices : np.ndarray
+        The indices of the samples to load.
+    shuffle : bool
+        Whether to shuffle the data.
+    batch_size : int
+        The batch size for loading data.
+
+    Returns
+    -------
+    DataLoader
+        The DataLoader for the dataset.
+    """
     subset = Subset(dataset, indices)
     return DataLoader(
         subset,

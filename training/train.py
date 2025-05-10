@@ -60,6 +60,8 @@ class Trainer:
         }
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
+        self.X = self.X.to("cuda")
+        self.y = self.y.to("cuda")
 
     def train(
         self, model_type: str, model_params: ModelParams, trial_number: int = 0
@@ -94,7 +96,9 @@ class Trainer:
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)
-            for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
+            for fold, (train_idx, val_idx) in enumerate(
+                skf.split(self.X.cpu(), self.y.cpu())
+            ):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
                     val_loss, val_acc = self.train_fold_dispatch[model_type](
@@ -160,7 +164,9 @@ class Trainer:
             batch_size=NN_params.batch_size,
         )
 
-        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params)
+        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params).to(
+            "cuda"
+        )
 
         tb_run_name = (
             f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
@@ -173,7 +179,8 @@ class Trainer:
 
         trainer = pl.Trainer(
             max_epochs=self.fixed_params.max_epochs,
-            accelerator="auto",
+            accelerator="gpu",
+            devices="auto",
             val_check_interval=self.fixed_params.val_check_interval,
             logger=tb_logger,
             callbacks=[
