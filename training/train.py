@@ -95,12 +95,13 @@ class Trainer:
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
-                logger.info(f"Fold {fold+1}")
-                val_loss, val_acc = self.train_fold_dispatch[model_type](
-                    fold, train_idx, val_idx, trial_number, model_params
-                )
-                val_losses.append(val_loss)
-                val_accs.append(val_acc)
+                with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
+                    logger.info(f"Fold {fold+1}")
+                    val_loss, val_acc = self.train_fold_dispatch[model_type](
+                        fold, train_idx, val_idx, trial_number, model_params
+                    )
+                    val_losses.append(val_loss)
+                    val_accs.append(val_acc)
 
             mean_val_loss = np.mean(val_losses)
             std_val_loss = np.std(val_losses)
@@ -170,27 +171,26 @@ class Trainer:
             monitor="val_loss", patience=3, verbose=True, mode="min"
         )
 
-        with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
-            trainer = pl.Trainer(
-                max_epochs=self.fixed_params.max_epochs,
-                accelerator="auto",
-                val_check_interval=self.fixed_params.val_check_interval,
-                logger=tb_logger,
-                callbacks=[
-                    pl.callbacks.ModelCheckpoint(
-                        dirpath="checkpoints",
-                        filename="best_model",
-                        save_top_k=1,
-                        monitor="val_loss",
-                        mode="min",
-                    ),
-                    early_stopping,
-                ],
-            )
+        trainer = pl.Trainer(
+            max_epochs=self.fixed_params.max_epochs,
+            accelerator="auto",
+            val_check_interval=self.fixed_params.val_check_interval,
+            logger=tb_logger,
+            callbacks=[
+                pl.callbacks.ModelCheckpoint(
+                    dirpath="checkpoints",
+                    filename="best_model",
+                    save_top_k=1,
+                    monitor="val_loss",
+                    mode="min",
+                ),
+                early_stopping,
+            ],
+        )
 
-            trainer.fit(model, train_loader, val_loader)
-            val_loss = trainer.callback_metrics["val_loss"].item()
-            val_acc = trainer.callback_metrics["val_acc"].item()
+        trainer.fit(model, train_loader, val_loader)
+        val_loss = trainer.callback_metrics["val_loss"].item()
+        val_acc = trainer.callback_metrics["val_acc"].item()
 
         return val_loss, val_acc
 
@@ -210,10 +210,9 @@ class Trainer:
         # )
         # tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
 
-        with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
-            model.fit(self.X[train_idx], self.y[train_idx])
-            y_pred = model.predict(self.X[val_idx])
+        model.fit(self.X[train_idx], self.y[train_idx])
+        y_pred = model.predict(self.X[val_idx])
 
-            val_acc = accuracy_score(self.y[val_idx], y_pred)
+        val_acc = accuracy_score(self.y[val_idx], y_pred)
 
         return 0, val_acc
