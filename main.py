@@ -4,6 +4,8 @@ from utils.optuna_utils import optimize_hyperparameters_NN, optimize_hyperparame
 from utils.parameters_loader import save_params
 import torch
 
+# torch.set_float32_matmul_precision("medium")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -12,7 +14,8 @@ def main():
     """
     Main function to run the training process.
     """
-    torch.multiprocessing.set_start_method("spawn", force=True)
+    # torch.multiprocessing.set_start_method("spawn", force=True)
+    print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
     trainer = Trainer()
 

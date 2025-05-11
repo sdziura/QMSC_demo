@@ -1,6 +1,5 @@
 import numpy as np
-from numpy import ndarray
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import TensorDataset
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping
@@ -9,9 +8,10 @@ from sklearn.metrics import accuracy_score
 import mlflow
 
 import logging
-from config import FixedParams, ModelParams, NNParams, SVMParams
+from config import FixedParams, ModelParams, NNParams, SVMParams, QNNParams
 from models.model_NN import TwoLayerModel
 from models.model_SVM import SVM
+from models.model_QNN import VariationalQuantumCircuit
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params
 
@@ -60,8 +60,6 @@ class Trainer:
         }
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
-        self.X = self.X.to("cuda")
-        self.y = self.y.to("cuda")
 
     def train(
         self, model_type: str, model_params: ModelParams, trial_number: int = 0
@@ -97,7 +95,8 @@ class Trainer:
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(
-                skf.split(self.X.cpu(), self.y.cpu())
+                # skf.split(self.X.cpu(), self.y.cpu())
+                skf.split(self.X, self.y)
             ):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
@@ -164,9 +163,10 @@ class Trainer:
             batch_size=NN_params.batch_size,
         )
 
-        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params).to(
-            "cuda"
-        )
+        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params)
+        if FixedParams.use_gpu:
+            model = model.to("cuda")
+        logger.info(f"Model is running on device: {next(model.parameters()).device}")
 
         tb_run_name = (
             f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
@@ -179,8 +179,7 @@ class Trainer:
 
         trainer = pl.Trainer(
             max_epochs=self.fixed_params.max_epochs,
-            accelerator="gpu",
-            devices="auto",
+            accelerator="gpu" if FixedParams.use_gpu else "auto",
             val_check_interval=self.fixed_params.val_check_interval,
             logger=tb_logger,
             callbacks=[
@@ -196,6 +195,7 @@ class Trainer:
         )
 
         trainer.fit(model, train_loader, val_loader)
+
         val_loss = trainer.callback_metrics["val_loss"].item()
         val_acc = trainer.callback_metrics["val_acc"].item()
 

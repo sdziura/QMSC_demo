@@ -33,11 +33,12 @@ class FixedParams:
     val_check_interval: int = 1
     input_size: int = 20
     output_size: int = 2
-    max_epochs: int = 5000
+    max_epochs: int = 200
     experiment_name: str = "HMM_Classification_NN"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
-    optuna_trials: int = 50
+    optuna_trials: int = 20
+    use_gpu = False
 
 
 @dataclass
@@ -79,3 +80,11 @@ class SVMParams(ModelParams):
     kernel: str = "rbf"
     gamma: str = "scale"
     degree: int = 3
+
+
+@dataclass
+class QNNParams(ModelParams):
+    learning_rate: float = 0.0005
+    hidden_size_1: int = 32
+    hidden_size_2: int = 64
+    batch_size: int = 32

@@ -67,7 +67,7 @@ class TwoLayerModel(pl.LightningModule):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        self.log("train_loss", loss, on_epoch=True, on_step=False)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def test_step(self, batch, batch_idx):
