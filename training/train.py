@@ -57,6 +57,7 @@ class Trainer:
         self.train_fold_dispatch = {
             "svm": self.train_fold_SVM,
             "nn": self.train_fold_NN,
+            "qnn": self.train_fold_NN,
         }
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
@@ -94,10 +95,7 @@ class Trainer:
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)
-            for fold, (train_idx, val_idx) in enumerate(
-                # skf.split(self.X.cpu(), self.y.cpu())
-                skf.split(self.X, self.y)
-            ):
+            for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
                     val_loss, val_acc = self.train_fold_dispatch[model_type](
@@ -126,7 +124,7 @@ class Trainer:
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
-        NN_params: NNParams,
+        model_params: ModelParams,
     ) -> tuple[float, float]:
         """
         Trains the model for a specific fold and logs the results.
@@ -154,16 +152,24 @@ class Trainer:
             dataset=dataset,
             indices=train_idx,
             shuffle=True,
-            batch_size=NN_params.batch_size,
+            batch_size=model_params.batch_size,
         )
         val_loader = get_dataloader(
             dataset=dataset,
             indices=val_idx,
             shuffle=False,
-            batch_size=NN_params.batch_size,
+            batch_size=model_params.batch_size,
         )
 
-        model = TwoLayerModel(fixed_params=self.fixed_params, NN_params=NN_params)
+        if self.train_fold_dispatch == "nn":
+            model = TwoLayerModel(
+                fixed_params=self.fixed_params, NN_params=model_params
+            )
+        else:
+            model = VariationalQuantumCircuit(
+                fixed_params=self.fixed_params, QNN_params=model_params
+            )
+
         if FixedParams.use_gpu:
             model = model.to("cuda")
         logger.info(f"Model is running on device: {next(model.parameters()).device}")
@@ -177,9 +183,14 @@ class Trainer:
             monitor="val_loss", patience=3, verbose=True, mode="min"
         )
 
+        if FixedParams.use_gpu:
+            accelerator = "gpu"
+        else:
+            accelerator = "cpu"
+
         trainer = pl.Trainer(
             max_epochs=self.fixed_params.max_epochs,
-            accelerator="gpu" if FixedParams.use_gpu else "auto",
+            accelerator=accelerator,
             val_check_interval=self.fixed_params.val_check_interval,
             logger=tb_logger,
             callbacks=[

@@ -34,11 +34,11 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 200
-    experiment_name: str = "HMM_Classification_NN"
+    experiment_name: str = "HMM_Classification_QNN"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 20
-    use_gpu = False
+    use_gpu = True
 
 
 @dataclass
@@ -85,6 +85,10 @@ class SVMParams(ModelParams):
 @dataclass
 class QNNParams(ModelParams):
     learning_rate: float = 0.0005
-    hidden_size_1: int = 32
-    hidden_size_2: int = 64
     batch_size: int = 32
+    n_layers: int = 2
+    n_qubits: int = 6
+    embedding_axis: str = "Y"
+    rot_axis_0: str = "Y"
+    rot_axis_1: str = "Y"
+    shots: int = None

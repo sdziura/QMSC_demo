@@ -1,18 +1,18 @@
 import optuna
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
-from config import NNParams, SVMParams
+from config import NNParams, SVMParams, QNNParams
 from training.train import Trainer
 
 
 def optimize_hyperparameters_NN(trainer: Trainer, n_trials: int) -> dict:
     def objective(trial, trainer: Trainer) -> float:
         optuna_params = NNParams(
-            learning_rate=trial.suggest_float("learning_rate", 1e-4, 1e-2, log=True),
-            hidden_size_1=trial.suggest_categorical("hidden_size_1", [16, 32, 64, 128]),
-            hidden_size_2=trial.suggest_categorical("hidden_size_2", [16, 32, 64, 128]),
-            batch_size=trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
-            dropout=trial.suggest_float("dropout", 0.1, 0.5),
+            learning_rate=trial.suggest_float("learning_rate", 1e-4, 1e-3, log=True),
+            hidden_size_1=trial.suggest_categorical("hidden_size_1", [32, 64]),
+            hidden_size_2=trial.suggest_categorical("hidden_size_2", [32, 64]),
+            batch_size=trial.suggest_categorical("batch_size", [16, 32]),
+            dropout=trial.suggest_float("dropout", 0.2, 0.5),
         )
         val_loss, _ = trainer.train("nn", optuna_params, trial_number=trial.number)
         return val_loss
@@ -50,4 +50,22 @@ def optimize_hyperparameters_SVM(trainer: Trainer, n_trials: int) -> dict:
 
     study = optuna.create_study(direction="maximize")
     study.optimize(lambda trial: objective(trial, trainer=trainer), n_trials=n_trials)
+    return study.best_params
+
+
+def optimize_hyperparameters_QNN(trainer: Trainer, n_trials: int) -> dict:
+    def objective(trial, trainer: Trainer) -> float:
+        optuna_params = QNNParams(
+            learning_rate=trial.suggest_float("learning_rate", 1e-4, 1e-3, log=True),
+            batch_size=trial.suggest_categorical("batch_size", [16, 32]),
+            n_qubits=trial.suggest_int("n_qubits", 2, 6),
+            embedding_axis=trial.suggest_categorical("embedding_axis", ["Y", "X"]),
+            rot_axis_0=trial.suggest_categorical("rot0", ["Y", "X", "Z"]),
+            rot_axis_1=trial.suggest_categorical("rot1", ["Y", "X", "Z"]),
+        )
+        val_loss, _ = trainer.train("qnn", optuna_params, trial_number=trial.number)
+        return val_loss
+
+    study = optuna.create_study(direction="minimize")
+    study.optimize(lambda trial: objective(trial, trainer), n_trials=n_trials)
     return study.best_params
