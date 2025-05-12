@@ -39,6 +39,7 @@ class FixedParams:
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 20
     use_gpu = True
+    profiler_active_steps = 0
 
 
 @dataclass

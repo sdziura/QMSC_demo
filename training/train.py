@@ -196,7 +196,7 @@ class Trainer:
             schedule=schedule(
                 wait=1,  # Number of warm-up steps
                 warmup=1,  # Number of warm-up steps before recording
-                active=5,  # Number of steps to record
+                active=FixedParams.profiler_active_steps,  # Number of steps to record
                 repeat=2,  # Number of profiling cycles
             ),
             on_trace_ready=torch.profiler.tensorboard_trace_handler(
@@ -204,6 +204,8 @@ class Trainer:
             ),
             profile_dataloader=True,  # Enable DataLoader profiling
         )
+        if FixedParams.profiler_active_steps == 0:
+            profiler = None
 
         trainer = pl.Trainer(
             max_epochs=self.fixed_params.max_epochs,
