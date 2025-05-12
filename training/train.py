@@ -17,6 +17,7 @@ from models.model_SVM import SVM
 from models.model_QNN import VariationalQuantumCircuit
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params
+from training.trainer import get_trainer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -180,50 +181,7 @@ class Trainer:
         tb_run_name = (
             f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
         )
-        tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
-
-        early_stopping = EarlyStopping(
-            monitor="val_loss", patience=3, verbose=True, mode="min"
-        )
-
-        if FixedParams.use_gpu:
-            accelerator = "gpu"
-        else:
-            accelerator = "cpu"
-
-        # Configure PyTorch Profiler with a valid schedule
-        profiler = PyTorchProfiler(
-            schedule=schedule(
-                wait=1,  # Number of warm-up steps
-                warmup=1,  # Number of warm-up steps before recording
-                active=FixedParams.profiler_active_steps,  # Number of steps to record
-                repeat=2,  # Number of profiling cycles
-            ),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler(
-                "server/tb_logs/profiler"
-            ),
-            profile_dataloader=True,  # Enable DataLoader profiling
-        )
-        if FixedParams.profiler_active_steps == 0:
-            profiler = None
-
-        trainer = pl.Trainer(
-            max_epochs=self.fixed_params.max_epochs,
-            accelerator=accelerator,
-            val_check_interval=self.fixed_params.val_check_interval,
-            logger=tb_logger,
-            profiler=profiler,  # Use AdvancedProfiler here
-            callbacks=[
-                pl.callbacks.ModelCheckpoint(
-                    dirpath="checkpoints",
-                    filename="best_model",
-                    save_top_k=1,
-                    monitor="val_loss",
-                    mode="min",
-                ),
-                early_stopping,
-            ],
-        )
+        trainer = get_trainer(self.fixed_params, tb_run_name)
 
         trainer.fit(model, train_loader, val_loader)
 
