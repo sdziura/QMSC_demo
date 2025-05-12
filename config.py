@@ -33,8 +33,8 @@ class FixedParams:
     val_check_interval: int = 1
     input_size: int = 20
     output_size: int = 2
-    max_epochs: int = 200
-    experiment_name: str = "HMM_Classification_QNN"
+    max_epochs: int = 100
+    experiment_name: str = "HMM_Classification_gpu_test1"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 20
@@ -85,9 +85,9 @@ class SVMParams(ModelParams):
 @dataclass
 class QNNParams(ModelParams):
     learning_rate: float = 0.0005
-    batch_size: int = 32
-    n_layers: int = 2
-    n_qubits: int = 6
+    batch_size: int = 16
+    n_layers: int = 1  # max 2 for now
+    n_qubits: int = 2
     embedding_axis: str = "Y"
     rot_axis_0: str = "Y"
     rot_axis_1: str = "Y"

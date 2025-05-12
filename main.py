@@ -8,7 +8,7 @@ from utils.optuna_utils import (
 from utils.parameters_loader import save_params
 import torch
 
-# torch.set_float32_matmul_precision("medium")
+torch.set_float32_matmul_precision("medium")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

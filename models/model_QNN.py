@@ -75,7 +75,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
             )
             rot_axis = ["Y"] * self.QNN_params.n_layers
             rot_axis[0] = self.QNN_params.rot_axis_0
-            rot_axis[1] = self.QNN_params.rot_axis_1
+            # rot_axis[1] = self.QNN_params.rot_axis_1
             for i in range(self.QNN_params.n_layers):
                 self.ansatz(weights[i], rot_axis[i])
             return (

@@ -56,9 +56,9 @@ def optimize_hyperparameters_SVM(trainer: Trainer, n_trials: int) -> dict:
 def optimize_hyperparameters_QNN(trainer: Trainer, n_trials: int) -> dict:
     def objective(trial, trainer: Trainer) -> float:
         optuna_params = QNNParams(
-            learning_rate=trial.suggest_float("learning_rate", 1e-4, 1e-3, log=True),
-            batch_size=trial.suggest_categorical("batch_size", [16, 32]),
-            n_qubits=trial.suggest_int("n_qubits", 2, 6),
+            learning_rate=trial.suggest_float("learning_rate", 5e-4, 1e-3, log=True),
+            batch_size=trial.suggest_categorical("batch_size", [64, 128]),
+            n_qubits=trial.suggest_int("n_qubits", 2, 4),
             embedding_axis=trial.suggest_categorical("embedding_axis", ["Y", "X"]),
             rot_axis_0=trial.suggest_categorical("rot0", ["Y", "X", "Z"]),
             rot_axis_1=trial.suggest_categorical("rot1", ["Y", "X", "Z"]),
