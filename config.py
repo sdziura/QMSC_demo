@@ -68,6 +68,7 @@ class NNParams(ModelParams):
         Dropout rate for regularization.
     """
 
+    model_type: str = "nn"
     learning_rate: float = 0.0005
     hidden_size_1: int = 32
     hidden_size_2: int = 64
@@ -77,6 +78,7 @@ class NNParams(ModelParams):
 
 @dataclass
 class SVMParams(ModelParams):
+    model_type: str = "svm"
     C: float = 1.0
     kernel: str = "rbf"
     gamma: str = "scale"
@@ -85,6 +87,7 @@ class SVMParams(ModelParams):
 
 @dataclass
 class QNNParams(ModelParams):
+    model_type: str = "qnn"
     learning_rate: float = 0.0005
     batch_size: int = 16
     n_layers: int = 1  # max 2 for now
@@ -97,6 +100,7 @@ class QNNParams(ModelParams):
 
 @dataclass
 class QSVMParams(ModelParams):
+    model_type: str = "qsvm"
     n_qubits: int = 10
     embedding_axis: str = "XY"
     C: float = 1.0

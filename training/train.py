@@ -1,11 +1,6 @@
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import EarlyStopping
-from pytorch_lightning.profilers import PyTorchProfiler
-from torch.profiler import schedule
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 import mlflow
@@ -167,11 +162,11 @@ class Trainer:
             batch_size=model_params.batch_size,
         )
 
-        if self.train_fold_dispatch == "nn":
+        if model_params.model_type == "nn":
             model = TwoLayerModel(
                 fixed_params=self.fixed_params, NN_params=model_params
             )
-        elif self.train_fold_dispatch == "qnn":
+        elif model_params.model_type == "qnn":
             model = VariationalQuantumCircuit(
                 fixed_params=self.fixed_params, QNN_params=model_params
             )
@@ -203,9 +198,9 @@ class Trainer:
         model_params: ModelParams,
     ) -> tuple[float, float]:
 
-        if self.train_fold_dispatch == "svm":
+        if model_params.model_type == "svm":
             model = SVM(fixed_params=self.fixed_params, SVM_params=model_params)
-        elif self.train_fold_dispatch == "qsvm":
+        elif model_params.model_type == "qsvm":
             model = QSVM(fixed_params=self.fixed_params, QSVM_params=model_params)
         else:
             raise ValueError("Invalid model type given")
