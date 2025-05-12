@@ -11,9 +11,10 @@ from sklearn.metrics import accuracy_score
 import mlflow
 
 import logging
-from config import FixedParams, ModelParams, NNParams, SVMParams, QNNParams
+from config import FixedParams, ModelParams, NNParams, SVMParams, QNNParams, QSVMParams
 from models.model_NN import TwoLayerModel
 from models.model_SVM import SVM
+from models.model_QSVM import QSVM
 from models.model_QNN import VariationalQuantumCircuit
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params
@@ -62,6 +63,7 @@ class Trainer:
             "svm": self.train_fold_SVM,
             "nn": self.train_fold_NN,
             "qnn": self.train_fold_NN,
+            "qsvm": self.train_fold_SVM,
         }
 
         self.X, self.y = load_data(self.fixed_params.dataset_file)
@@ -169,10 +171,12 @@ class Trainer:
             model = TwoLayerModel(
                 fixed_params=self.fixed_params, NN_params=model_params
             )
-        else:
+        elif self.train_fold_dispatch == "qnn":
             model = VariationalQuantumCircuit(
                 fixed_params=self.fixed_params, QNN_params=model_params
             )
+        else:
+            raise ValueError("Invalid model type given")
 
         if FixedParams.use_gpu:
             model = model.to("cuda")
@@ -196,10 +200,15 @@ class Trainer:
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
-        SVM_params: SVMParams,
+        model_params: ModelParams,
     ) -> tuple[float, float]:
 
-        model = SVM(fixed_params=self.fixed_params, SVM_params=SVM_params)
+        if self.train_fold_dispatch == "svm":
+            model = SVM(fixed_params=self.fixed_params, SVM_params=model_params)
+        elif self.train_fold_dispatch == "qsvm":
+            model = QSVM(fixed_params=self.fixed_params, QSVM_params=model_params)
+        else:
+            raise ValueError("Invalid model type given")
 
         # tb_run_name = (
         #     f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"

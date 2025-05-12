@@ -1,7 +1,7 @@
 import optuna
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
-from config import NNParams, SVMParams, QNNParams
+from config import NNParams, SVMParams, QNNParams, QSVMParams
 from training.train import Trainer
 
 
@@ -68,4 +68,19 @@ def optimize_hyperparameters_QNN(trainer: Trainer, n_trials: int) -> dict:
 
     study = optuna.create_study(direction="minimize")
     study.optimize(lambda trial: objective(trial, trainer), n_trials=n_trials)
+    return study.best_params
+
+
+def optimize_hyperparameters_SVM(trainer: Trainer, n_trials: int) -> dict:
+    def objective(trial, trainer: Trainer) -> float:
+
+        optuna_params = QSVMParams(
+            C=trial.suggest_loguniform("C", 1e-3, 1e3),
+        )
+        _, val_acc = trainer.train("svm", optuna_params, trial_number=trial.number)
+
+        return val_acc
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(lambda trial: objective(trial, trainer=trainer), n_trials=n_trials)
     return study.best_params

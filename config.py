@@ -89,7 +89,15 @@ class QNNParams(ModelParams):
     batch_size: int = 16
     n_layers: int = 1  # max 2 for now
     n_qubits: int = 2
-    embedding_axis: str = "Y"
+    embedding_axis: str = "X"
     rot_axis_0: str = "Y"
     rot_axis_1: str = "Y"
+    shots: int = None
+
+
+@dataclass
+class QSVMParams(ModelParams):
+    n_qubits: int = 10
+    embedding_axis: str = "XY"
+    C: float = 1.0
     shots: int = None
