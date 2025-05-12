@@ -1,8 +1,11 @@
 import numpy as np
+import torch
 from torch.utils.data import TensorDataset
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.profilers import PyTorchProfiler
+from torch.profiler import schedule
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 import mlflow
@@ -139,8 +142,8 @@ class Trainer:
             The indices for the validation data.
         trial_number : int
             The Optuna trial number.
-        optuna_params : OptunaParams
-            An instance of OptunaParams containing hyperparameters to be optimized.
+        model_params : ModelParams
+            An instance of ModelParams containing hyperparameters to be optimized.
 
         Returns
         -------
@@ -188,11 +191,26 @@ class Trainer:
         else:
             accelerator = "cpu"
 
+        # Configure PyTorch Profiler with a valid schedule
+        profiler = PyTorchProfiler(
+            schedule=schedule(
+                wait=1,  # Number of warm-up steps
+                warmup=1,  # Number of warm-up steps before recording
+                active=5,  # Number of steps to record
+                repeat=2,  # Number of profiling cycles
+            ),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                "server/tb_logs/profiler"
+            ),
+            profile_dataloader=True,  # Enable DataLoader profiling
+        )
+
         trainer = pl.Trainer(
             max_epochs=self.fixed_params.max_epochs,
             accelerator=accelerator,
             val_check_interval=self.fixed_params.val_check_interval,
             logger=tb_logger,
+            profiler=profiler,  # Use AdvancedProfiler here
             callbacks=[
                 pl.callbacks.ModelCheckpoint(
                     dirpath="checkpoints",
