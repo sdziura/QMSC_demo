@@ -18,6 +18,8 @@ class QSVM:
     def __init__(self, fixed_params: FixedParams, QSVM_params: QSVMParams):
 
         self.n_qubits = QSVM_params.n_qubits
+        self.model_params = QSVM_params
+        self.fixed_params = fixed_params
         # Device selection
         if fixed_params.use_gpu:
             self.dev = qml.device(

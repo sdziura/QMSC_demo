@@ -13,7 +13,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
     def __init__(self, fixed_params: FixedParams, QNN_params: QNNParams):
         super(VariationalQuantumCircuit, self).__init__()
         self.fixed_params = fixed_params
-        self.QNN_params = QNN_params
+        self.model_params = QNN_params
 
         # Device selection
         if fixed_params.use_gpu:
@@ -56,9 +56,9 @@ class VariationalQuantumCircuit(pl.LightningModule):
         """
         Defines the quantum ansatz (circuit structure).
         """
-        for i in range(self.QNN_params.n_qubits):
+        for i in range(self.model_params.n_qubits):
             self.apply_rotation(axis, weights[i], wires=i)
-        for i in range(self.QNN_params.n_qubits - 1):
+        for i in range(self.model_params.n_qubits - 1):
             qml.CNOT(wires=[i, i + 1])
 
     def variational_circuit(self, weights, x=None):
@@ -70,16 +70,16 @@ class VariationalQuantumCircuit(pl.LightningModule):
         def circuit(weights, x):
             qml.AngleEmbedding(
                 x,
-                wires=range(self.QNN_params.n_qubits),
-                rotation=self.QNN_params.embedding_axis,
+                wires=range(self.model_params.n_qubits),
+                rotation=self.model_params.embedding_axis,
             )
 
-            rot_axis = ["Y"] * self.QNN_params.n_layers
-            rot_axis[0] = self.QNN_params.rot_axis_0
-            if self.QNN_params.n_layers == 2:
-                rot_axis[1] = self.QNN_params.rot_axis_1
+            rot_axis = ["Y"] * self.model_params.n_layers
+            rot_axis[0] = self.model_params.rot_axis_0
+            if self.model_params.n_layers == 2:
+                rot_axis[1] = self.model_params.rot_axis_1
 
-            for i in range(self.QNN_params.n_layers):
+            for i in range(self.model_params.n_layers):
                 self.ansatz(weights[i], rot_axis[i])
             return (
                 qml.expval(qml.PauliZ(wires=0)),

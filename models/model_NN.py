@@ -45,6 +45,8 @@ class TwoLayerModel(pl.LightningModule):
 
     def __init__(self, fixed_params: FixedParams, NN_params: NNParams):
         super(TwoLayerModel, self).__init__()
+        self.model_params = NN_params
+        self.fixed_params = fixed_params
         self.lr = NN_params.learning_rate
         self.model = nn.Sequential(
             nn.Linear(fixed_params.input_size, NN_params.hidden_size_1),
