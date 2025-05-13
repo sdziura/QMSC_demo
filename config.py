@@ -34,10 +34,10 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 100
-    experiment_name: str = "HMM_Classification_gpu_test1"
+    experiment_name: str = "HMM_Classification_QNN"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
-    optuna_trials: int = 20
+    optuna_trials: int = 10
     use_gpu = True
     profiler_active_steps = 0
 
@@ -90,7 +90,7 @@ class QNNParams(ModelParams):
     model_type: str = "qnn"
     learning_rate: float = 0.0005
     batch_size: int = 16
-    n_layers: int = 1  # max 2 for now
+    n_layers: int = 2  # max 2 for now
     n_qubits: int = 2
     embedding_axis: str = "X"
     rot_axis_0: str = "Y"
