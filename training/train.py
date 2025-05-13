@@ -12,7 +12,7 @@ from models.model_SVM import SVM
 from models.model_QSVM import QSVM
 from models.model_QNN import VariationalQuantumCircuit
 from utils.data_loader import load_data, get_dataloader
-from utils.mlflow_utils import log_mlflow_params
+from utils.mlflow_utils import log_mlflow_params, initialize_mlflow
 from training.trainer import get_trainer
 
 logging.basicConfig(level=logging.INFO)
@@ -51,9 +51,7 @@ class Trainer:
         Initializes the Trainer class, sets up MLFlow tracking, and loads data.
         """
         self.fixed_params = FixedParams()
-        mlflow.set_tracking_uri(self.fixed_params.mlflow_uri)
-        mlflow.set_experiment(self.fixed_params.experiment_name)
-        mlflow.pytorch.autolog()
+
         self.train_fold_dispatch = {
             "svm": self.train_fold_SVM,
             "nn": self.train_fold_NN,
@@ -93,6 +91,12 @@ class Trainer:
 
         val_losses = []
         val_accs = []
+
+        # Start MLFlow experiment
+        initialize_mlflow(
+            self.fixed_params.mlflow_uri, self.fixed_params.experiment_name
+        )
+
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)

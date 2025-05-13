@@ -1,6 +1,23 @@
 import torch
 import mlflow
 from mlflow.models import infer_signature
+import mlflow.pytorch
+
+
+def initialize_mlflow(tracking_uri: str, experiment_name: str):
+    """
+    Initialize MLflow with the given tracking URI and experiment name.
+
+    Parameters
+    ----------
+    tracking_uri : str
+        The URI for the MLflow tracking server.
+    experiment_name : str
+        The name of the experiment to log runs under.
+    """
+    mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment_name)
+    mlflow.pytorch.autolog()
 
 
 def log_mlflow_model(
