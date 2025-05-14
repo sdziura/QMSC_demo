@@ -58,3 +58,10 @@ def log_mlflow_params(params: dict) -> None:
     """
     for key, value in params.items():
         mlflow.log_param(key, value)
+
+
+def log_params_with_prefix(params: dict, prefix: str = None) -> None:
+    if prefix == None:
+        prefix = params["model_type"]
+    for key, value in params.items():
+        mlflow.log_param(f"{prefix}_{key}", value)
