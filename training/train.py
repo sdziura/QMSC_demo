@@ -46,11 +46,11 @@ class Trainer:
         Optimizes hyperparameters using Optuna and returns the best parameters.
     """
 
-    def __init__(self):
+    def __init__(self, fixed_params: FixedParams = FixedParams()):
         """
         Initializes the Trainer class, sets up MLFlow tracking, and loads data.
         """
-        self.fixed_params = FixedParams()
+        self.fixed_params = fixed_params
 
         self.train_fold_dispatch = {
             "svm": self.train_fold_SVM,
@@ -58,8 +58,6 @@ class Trainer:
             "qnn": self.train_fold_NN,
             "qsvm": self.train_fold_SVM,
         }
-
-        self.X, self.y = load_data(self.fixed_params.dataset_file)
 
     def train(
         self, model_type: str, model_params: ModelParams, trial_number: int = 0
@@ -83,6 +81,7 @@ class Trainer:
             raise ValueError(f"Unknown model type: {model_type}")
 
         run_name = f"CrossValidation_Experiment_{model_type}_Trial_{trial_number}"
+        X, y = load_data(self.fixed_params.dataset_file)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
             shuffle=True,
@@ -100,11 +99,11 @@ class Trainer:
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
             log_mlflow_params(model_params.__dict__)
-            for fold, (train_idx, val_idx) in enumerate(skf.split(self.X, self.y)):
+            for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
                     val_loss, val_acc = self.train_fold_dispatch[model_type](
-                        fold, train_idx, val_idx, trial_number, model_params
+                        fold, X, y, train_idx, val_idx, trial_number, model_params
                     )
                     val_losses.append(val_loss)
                     val_accs.append(val_acc)
@@ -126,6 +125,8 @@ class Trainer:
     def train_fold_NN(
         self,
         fold: int,
+        X: torch.tensor,
+        y: torch.tensor,
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
@@ -152,7 +153,7 @@ class Trainer:
         tuple[float, float]
             The validation loss and validation accuracy for the fold.
         """
-        dataset = TensorDataset(self.X, self.y)
+        dataset = TensorDataset(X, y)
         train_loader = get_dataloader(
             dataset=dataset,
             indices=train_idx,
@@ -196,6 +197,8 @@ class Trainer:
     def train_fold_SVM(
         self,
         fold: int,
+        X: torch.tensor,
+        y: torch.tensor,
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
@@ -214,9 +217,9 @@ class Trainer:
         # )
         # tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
 
-        model.fit(self.X[train_idx], self.y[train_idx])
-        y_pred = model.predict(self.X[val_idx])
+        model.fit(X[train_idx], y[train_idx])
+        y_pred = model.predict(X[val_idx])
 
-        val_acc = accuracy_score(self.y[val_idx], y_pred)
+        val_acc = accuracy_score(y[val_idx], y_pred)
 
         return 0, val_acc
