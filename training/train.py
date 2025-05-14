@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.utils.data import TensorDataset
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 import mlflow
 
 import logging
@@ -90,6 +90,7 @@ class Trainer:
 
         val_losses = []
         val_accs = []
+        val_f1s = []
 
         # Start MLFlow experiment
         initialize_mlflow(
@@ -102,11 +103,11 @@ class Trainer:
             for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
-                    val_loss, val_acc = self.train_fold_dispatch[model_type](
+                    val_loss, val_f1 = self.train_fold_dispatch[model_type](
                         fold, X, y, train_idx, val_idx, trial_number, model_params
                     )
                     val_losses.append(val_loss)
-                    val_accs.append(val_acc)
+                    val_f1s.append(val_f1)
 
             mean_val_loss = np.mean(val_losses)
             std_val_loss = np.std(val_losses)
@@ -114,13 +115,18 @@ class Trainer:
             mean_val_acc = np.mean(val_accs)
             std_val_acc = np.std(val_accs)
 
+            mean_val_f1 = np.mean(val_f1s)
+            std_val_f1 = np.std(val_f1s)
+
             # Log aggregated results
             mlflow.log_metric("val_loss", mean_val_loss)
             mlflow.log_metric("val_loss_std", std_val_loss)
             mlflow.log_metric("val_acc", mean_val_acc)
             mlflow.log_metric("val_acc_std", std_val_acc)
+            mlflow.log_metric("val_acc", mean_val_f1)
+            mlflow.log_metric("val_acc_std", std_val_f1)
 
-        return mean_val_loss, mean_val_acc
+        return mean_val_loss, mean_val_f1
 
     def train_fold_NN(
         self,
@@ -191,8 +197,9 @@ class Trainer:
 
         val_loss = trainer.callback_metrics["val_loss"].item()
         val_acc = trainer.callback_metrics["val_acc"].item()
+        val_f1 = trainer.callback_metrics["val_f1"].item()
 
-        return val_loss, val_acc
+        return val_loss, val_f1
 
     def train_fold_SVM(
         self,
@@ -221,5 +228,6 @@ class Trainer:
         y_pred = model.predict(X[val_idx])
 
         val_acc = accuracy_score(y[val_idx], y_pred)
+        val_f1 = f1_score(y[val_idx], y_pred)
 
-        return 0, val_acc
+        return 0, val_f1
