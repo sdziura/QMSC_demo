@@ -26,3 +26,10 @@ def load_params(file_name: str) -> dict:
         params = json.load(fp)
         print(f"Model params loaded from the {file_name}")
     return params
+
+
+def save_results(params: dict, file_name: str):
+    # Save the dictionary to a file
+    with open(f"results/{file_name}", "w") as fp:
+        json.dump(params, fp)
+        print(f"Results saved to the {file_name}")
