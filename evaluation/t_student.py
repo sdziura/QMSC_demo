@@ -28,7 +28,9 @@ def corrected_std(differences, n_train, n_test):
 
 
 def compute_corrected_ttest(differences, df, n_train, n_test):
-    """Computes right-tailed paired t-test with corrected variance.
+    """Computes right-tailed paired t-test with corrected variance
+    to evaluate if the performance of the first model
+    is significantly better than that of the second model.
 
     Parameters
     ----------
