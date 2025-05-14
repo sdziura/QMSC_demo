@@ -1,0 +1,1 @@
+{"learning_rate": 0.001, "batch_size": 256, "n_qubits": 6, "embedding_axis": "X", "rot_axis_0": "X", "rot_axis_1": "X"}
