@@ -57,11 +57,11 @@ def optimize_hyperparameters_QNN(trainer: Trainer, n_trials: int) -> dict:
     def objective(trial, trainer: Trainer) -> float:
         optuna_params = QNNParams(
             learning_rate=trial.suggest_float("learning_rate", 5e-4, 1e-3, log=True),
-            batch_size=trial.suggest_categorical("batch_size", [256, 512, 1024]),
+            batch_size=trial.suggest_categorical("batch_size", [256, 512]),
             n_qubits=trial.suggest_int("n_qubits", 2, 6),
             embedding_axis=trial.suggest_categorical("embedding_axis", ["X"]),
-            rot_axis_0=trial.suggest_categorical("rot0", ["Y", "X", "Z"]),
-            rot_axis_1=trial.suggest_categorical("rot1", ["Y", "X"]),
+            rot_axis_0=trial.suggest_categorical("rot_axis_0", ["Y", "X", "Z"]),
+            rot_axis_1=trial.suggest_categorical("rot_axis_1", ["Y", "X"]),
         )
         val_loss, _ = trainer.train("qnn", optuna_params, trial_number=trial.number)
         return val_loss
