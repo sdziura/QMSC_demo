@@ -123,8 +123,8 @@ class Trainer:
             mlflow.log_metric("val_loss_std", std_val_loss)
             mlflow.log_metric("val_acc", mean_val_acc)
             mlflow.log_metric("val_acc_std", std_val_acc)
-            mlflow.log_metric("val_acc", mean_val_f1)
-            mlflow.log_metric("val_acc_std", std_val_f1)
+            mlflow.log_metric("val_f1", mean_val_f1)
+            mlflow.log_metric("val_f1_std", std_val_f1)
 
         return mean_val_loss, mean_val_f1
 

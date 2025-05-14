@@ -32,6 +32,8 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     to evaluate if the performance of the first model
     is significantly better than that of the second model.
 
+    Null hypothesis is that the second model performs at least as good as the first model.
+
     Parameters
     ----------
     differences : array-like of shape (n_samples,)

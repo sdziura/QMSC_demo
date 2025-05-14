@@ -37,12 +37,9 @@ class VariationalQuantumCircuit(pl.LightningModule):
 
         # Loss and metrics
         self.loss_fn = nn.CrossEntropyLoss()
-        self.accuracy = torchmetrics.Accuracy(
-            task="multiclass", num_classes=fixed_params.output_size
-        )
-        self.F1 = torchmetrics.F1Score(
-            task="multiclass", num_classes=fixed_params.output_size
-        )
+        self.accuracy = torchmetrics.Accuracy(task="binary")
+        self.F1 = torchmetrics.F1Score(task="binary")
+
         self.lr = QNN_params.learning_rate  # Learning rate from QNN_params
 
     def apply_rotation(self, axis: str, angle: float, wires: int):
@@ -120,7 +117,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
         f1 = self.F1(preds, y)
         self.log("val_loss", loss, prog_bar=True, on_epoch=True, on_step=False)
         self.log("val_acc", acc, prog_bar=True, on_epoch=True, on_step=False)
-        self.log("val_F1", f1, prog_bar=True, on_epoch=True, on_step=False)
+        self.log("val_f1", f1, prog_bar=True, on_epoch=True, on_step=False)
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -132,7 +129,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
         f1 = self.F1(preds, y)
         self.log("test_loss", loss, on_epoch=True, on_step=False)
         self.log("test_acc", acc, on_epoch=True, on_step=False)
-        self.log("test_F1", f1, on_epoch=True, on_step=False)
+        self.log("test_f1", f1, on_epoch=True, on_step=False)
         return loss
 
     def configure_optimizers(self):
