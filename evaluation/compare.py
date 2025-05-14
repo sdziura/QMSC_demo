@@ -39,24 +39,30 @@ def compare(model1, model2, fixed_params) -> dict:
         log_params_with_prefix(model2.model_params.__dict__)
         X, y = load_data(fixed_params.dataset_file)
         for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
-            with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
-                logger.info(f"Fold {fold+1}")
 
+            logger.info(f"Fold {fold+1}")
+
+            with mlflow.start_run(
+                nested=True, run_name=f"Fold_{fold+1}_{model1.model_params.model_type}"
+            ):
                 val_loss_1, val_f1_1 = trainer.train_fold_dispatch[
                     model1.model_params.model_type
                 ](fold, X, y, train_idx, val_idx, 0, model1.model_params)
 
+            with mlflow.start_run(
+                nested=True, run_name=f"Fold_{fold+1}_{model2.model_params.model_type}"
+            ):
                 val_loss_2, val_f1_2 = trainer.train_fold_dispatch[
                     model2.model_params.model_type
                 ](fold, X, y, train_idx, val_idx, 0, model2.model_params)
 
-                val_losses_1.append(val_loss_1)
-                val_f1s_1.append(val_f1_1)
+            val_losses_1.append(val_loss_1)
+            val_f1s_1.append(val_f1_1)
 
-                val_losses_2.append(val_loss_2)
-                val_f1s_2.append(val_f1_2)
+            val_losses_2.append(val_loss_2)
+            val_f1s_2.append(val_f1_2)
 
-    f1_diff = val_f1s_1 - val_f1s_2
+    f1_diff = [a - b for a, b in zip(val_f1s_1, val_f1s_2)]
     t, p = compute_corrected_ttest(f1_diff, len(train_idx), len(val_idx))
 
     return {
