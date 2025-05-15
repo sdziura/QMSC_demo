@@ -1,17 +1,10 @@
 import numpy as np
-import torch
-from torch.nn.functional import relu
-
+from tqdm import tqdm
 from sklearn.svm import SVC
-
 import pennylane as qml
-from pennylane.templates import AngleEmbedding, StronglyEntanglingLayers
-
-import matplotlib.pyplot as plt
-
-from sklearn.svm import SVC
 
 from config import QSVMParams, FixedParams, ModelParams
+from utils import quantum_utils
 
 
 class QSVM:
@@ -21,22 +14,13 @@ class QSVM:
         self.model_params = QSVM_params
         self.fixed_params = fixed_params
         # Device selection
-        if fixed_params.use_gpu:
-            self.dev = qml.device(
-                "lightning.gpu", wires=QSVM_params.n_qubits, shots=QSVM_params.shots
-            )
-            print("Using GPU with lightning.gpu")
-        else:
-            self.dev = qml.device(
-                "default.qubit", wires=QSVM_params.n_qubits, shots=QSVM_params.shots
-            )
-            print("Using CPU with default.qubit")
+        self.dev = quantum_utils.quantum_device(model_params=QSVM_params)
 
         self.projector = np.zeros((2**QSVM_params.n_qubits, 2**QSVM_params.n_qubits))
         self.projector[0, 0] = 1
 
         self.model = SVC(
-            kernel=self.kernel,
+            kernel=self.kernel_matrix,
             C=QSVM_params.C,
         )
 
@@ -45,8 +29,8 @@ class QSVM:
 
         @qml.qnode(self.dev)
         def qkernel(x1, x2):
-            AngleEmbedding(x1, wires=range(self.n_qubits))
-            qml.adjoint(AngleEmbedding)(x2, wires=range(self.n_qubits))
+            self.feature_map(x1)
+            qml.adjoint(self.feature_map)(x2)
             return qml.expval(qml.Hermitian(self.projector, wires=range(self.n_qubits)))
 
         return qkernel(x1, x2)
@@ -54,7 +38,15 @@ class QSVM:
     def kernel_matrix(self, A, B):
         """Compute the matrix whose entries are the kernel
         evaluated on pairwise data from sets A and B."""
-        return np.array([[self.kernel(a, b) for b in B] for a in A])
+        if FixedParams.use_gpu:
+            A = A.to("cuda")
+            B = B.to("cuda")
+        return np.array([[self.kernel(a, b) for b in B] for a in tqdm(A)])
+
+    def feature_map(self, x):
+        for i in range(self.n_qubits):
+            qml.RX(x[i], wires=i)
+            qml.RY(x[self.n_qubits + i], wires=i)
 
     def fit(self, X, y):
         self.model.fit(X=X, y=y)
