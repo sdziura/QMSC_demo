@@ -34,10 +34,10 @@ class FixedParams:
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 100
-    experiment_name: str = "HMM_Classification_compare"
+    experiment_name: str = "HMM_Classification_QSVM"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
-    optuna_trials: int = 10
+    optuna_trials: int = 5
     use_gpu = True
     profiler_active_steps = 0
 
@@ -102,6 +102,6 @@ class QNNParams(ModelParams):
 class QSVMParams(ModelParams):
     model_type: str = "qsvm"
     n_qubits: int = 10
-    embedding_axis: str = "XY"
+    embedding_axis: str = "X"
     C: float = 1.0
     shots: int = None

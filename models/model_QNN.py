@@ -7,6 +7,7 @@ import torchmetrics
 import pytorch_lightning as pl
 
 from config import FixedParams, QNNParams
+from utils import quantum_utils
 
 
 class VariationalQuantumCircuit(pl.LightningModule):
@@ -16,16 +17,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
         self.model_params = QNN_params
 
         # Device selection
-        if fixed_params.use_gpu:
-            self.dev = qml.device(
-                "lightning.gpu", wires=QNN_params.n_qubits, shots=QNN_params.shots
-            )
-            print("Using GPU with lightning.gpu")
-        else:
-            self.dev = qml.device(
-                "default.qubit", wires=QNN_params.n_qubits, shots=QNN_params.shots
-            )
-            print("Using CPU with default.qubit")
+        self.dev = quantum_utils.quantum_device(model_params=QNN_params)
 
         # Classical layer
         self.classical_layer = nn.Linear(fixed_params.input_size, QNN_params.n_qubits)

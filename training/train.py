@@ -82,6 +82,7 @@ class Trainer:
 
         run_name = f"CrossValidation_Experiment_{model_type}_Trial_{trial_number}"
         X, y = load_data(self.fixed_params.dataset_file)
+
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
             shuffle=True,
@@ -106,6 +107,8 @@ class Trainer:
                     val_loss, val_f1 = self.train_fold_dispatch[model_type](
                         fold, X, y, train_idx, val_idx, trial_number, model_params
                     )
+                    mlflow.log_metric("val_f1", val_f1)
+                    mlflow.log_metric("val_loss", val_loss)
                     val_losses.append(val_loss)
                     val_f1s.append(val_f1)
 
@@ -211,7 +214,14 @@ class Trainer:
         trial_number: int,
         model_params: ModelParams,
     ) -> tuple[float, float]:
+        """
+        Trains an SVM model for a specific fold.
 
+        Returns
+        -------
+        tuple[float, float]
+            The validation loss (0 for SVM) and validation F1 score for the fold.
+        """
         if model_params.model_type == "svm":
             model = SVM(fixed_params=self.fixed_params, SVM_params=model_params)
         elif model_params.model_type == "qsvm":
@@ -219,15 +229,9 @@ class Trainer:
         else:
             raise ValueError("Invalid model type given")
 
-        # tb_run_name = (
-        #     f"{self.fixed_params.experiment_name}/Trial_{trial_number}/Fold_{fold+1}"
-        # )
-        # tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
-
         model.fit(X[train_idx], y[train_idx])
         y_pred = model.predict(X[val_idx])
 
-        val_acc = accuracy_score(y[val_idx], y_pred)
-        val_f1 = f1_score(y[val_idx], y_pred)
+        val_f1 = f1_score(y[val_idx].cpu(), y_pred.cpu(), average="weighted")
 
         return 0, val_f1

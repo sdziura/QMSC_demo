@@ -44,9 +44,9 @@ def optimize_hyperparameters_SVM(trainer: Trainer, n_trials: int) -> dict:
             gamma=gamma,
             degree=degree,
         )
-        _, val_acc = trainer.train("svm", optuna_params, trial_number=trial.number)
+        _, val_f1 = trainer.train("svm", optuna_params, trial_number=trial.number)
 
-        return val_acc
+        return val_f1
 
     study = optuna.create_study(direction="maximize")
     study.optimize(lambda trial: objective(trial, trainer=trainer), n_trials=n_trials)
@@ -71,15 +71,15 @@ def optimize_hyperparameters_QNN(trainer: Trainer, n_trials: int) -> dict:
     return study.best_params
 
 
-def optimize_hyperparameters_SVM(trainer: Trainer, n_trials: int) -> dict:
+def optimize_hyperparameters_QSVM(trainer: Trainer, n_trials: int) -> dict:
     def objective(trial, trainer: Trainer) -> float:
 
         optuna_params = QSVMParams(
-            C=trial.suggest_loguniform("C", 1e-3, 1e3),
+            C=trial.suggest_float("C", 1e-3, 1e3, log=True),
         )
-        _, val_acc = trainer.train("svm", optuna_params, trial_number=trial.number)
+        _, val_f1 = trainer.train("qsvm", optuna_params, trial_number=trial.number)
 
-        return val_acc
+        return val_f1
 
     study = optuna.create_study(direction="maximize")
     study.optimize(lambda trial: objective(trial, trainer=trainer), n_trials=n_trials)
