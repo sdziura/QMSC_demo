@@ -28,7 +28,7 @@ class VariationalQuantumCircuit(pl.LightningModule):
         self.q_params = nn.Parameter(torch.rand(weight_shapes) * np.pi)
 
         # Loss and metrics
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = QNN_params.loss_func
         self.accuracy = torchmetrics.Accuracy(task="binary")
         self.F1 = torchmetrics.F1Score(task="binary")
 

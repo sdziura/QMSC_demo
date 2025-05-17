@@ -57,7 +57,7 @@ class TwoLayerModel(pl.LightningModule):
             nn.Dropout(NN_params.dropout),
             nn.Linear(NN_params.hidden_size_2, fixed_params.output_size),
         )
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = NN_params.loss_func
         self.accuracy = torchmetrics.Accuracy(task="binary")
         self.F1 = torchmetrics.F1Score(task="binary")
 

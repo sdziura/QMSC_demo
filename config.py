@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from torch import nn
 
 
 @dataclass
@@ -37,8 +38,8 @@ class FixedParams:
     experiment_name: str = "HMM_Classification_QSVM"
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
-    optuna_trials: int = 5
-    use_gpu = True
+    optuna_trials: int = 10
+    use_gpu = False
     profiler_active_steps = 0
 
 
@@ -74,6 +75,7 @@ class NNParams(ModelParams):
     hidden_size_2: int = 64
     batch_size: int = 32
     dropout: float = 0.2
+    loss_func = nn.CrossEntropyLoss()
 
 
 @dataclass
@@ -96,6 +98,7 @@ class QNNParams(ModelParams):
     rot_axis_0: str = "Y"
     rot_axis_1: str = "Y"
     shots: int = None
+    loss_func = nn.CrossEntropyLoss()
 
 
 @dataclass
