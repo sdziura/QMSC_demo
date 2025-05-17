@@ -48,6 +48,8 @@ def compare(model1, model2, fixed_params) -> dict:
                 val_loss_1, val_f1_1 = trainer.train_fold_dispatch[
                     model1.model_params.model_type
                 ](fold, X, y, train_idx, val_idx, 0, model1.model_params)
+                mlflow.log_metric("val_f1", val_f1_1)
+                mlflow.log_metric("val_loss", val_loss_1)
 
             with mlflow.start_run(
                 nested=True, run_name=f"Fold_{fold+1}_{model2.model_params.model_type}"
@@ -55,6 +57,8 @@ def compare(model1, model2, fixed_params) -> dict:
                 val_loss_2, val_f1_2 = trainer.train_fold_dispatch[
                     model2.model_params.model_type
                 ](fold, X, y, train_idx, val_idx, 0, model2.model_params)
+                mlflow.log_metric("val_f1", val_f1_2)
+                mlflow.log_metric("val_loss", val_loss_2)
 
             val_losses_1.append(val_loss_1)
             val_f1s_1.append(val_f1_1)
@@ -63,7 +67,9 @@ def compare(model1, model2, fixed_params) -> dict:
             val_f1s_2.append(val_f1_2)
 
     f1_diff = [a - b for a, b in zip(val_f1s_1, val_f1s_2)]
-    t, p = compute_corrected_ttest(f1_diff, len(train_idx), len(val_idx))
+    t, p = compute_corrected_ttest(
+        f1_diff, df=fixed_params.folds - 1, n_train=len(train_idx), n_test=len(val_idx)
+    )
 
     return {
         "t": t,
