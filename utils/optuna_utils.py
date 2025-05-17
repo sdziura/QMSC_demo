@@ -75,7 +75,8 @@ def optimize_hyperparameters_QSVM(trainer: Trainer, n_trials: int) -> dict:
     def objective(trial, trainer: Trainer) -> float:
 
         optuna_params = QSVMParams(
-            C=trial.suggest_float("C", 1e-3, 1e3, log=True),
+            C=trial.suggest_float("C", 0.5, 5, log=True),
+            # n_qubits=trial.suggest_categorical("n_qubits", [20]),
         )
         _, val_f1 = trainer.train("qsvm", optuna_params, trial_number=trial.number)
 

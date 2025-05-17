@@ -14,6 +14,7 @@ from models.model_QNN import VariationalQuantumCircuit
 from utils.data_loader import load_data, get_dataloader
 from utils.mlflow_utils import log_mlflow_params, initialize_mlflow
 from training.trainer import get_trainer
+from utils.cuda_utils import check_type
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -112,13 +113,13 @@ class Trainer:
                     val_losses.append(val_loss)
                     val_f1s.append(val_f1)
 
-            mean_val_loss = np.mean(val_losses)
+            mean_val_loss = np.nanmean(val_losses)
             std_val_loss = np.std(val_losses)
 
-            mean_val_acc = np.mean(val_accs)
+            mean_val_acc = np.nanmean(val_accs)
             std_val_acc = np.std(val_accs)
 
-            mean_val_f1 = np.mean(val_f1s)
+            mean_val_f1 = np.nanmean(val_f1s)
             std_val_f1 = np.std(val_f1s)
 
             # Log aggregated results
@@ -232,6 +233,6 @@ class Trainer:
         model.fit(X[train_idx], y[train_idx])
         y_pred = model.predict(X[val_idx])
 
-        val_f1 = f1_score(y[val_idx].cpu(), y_pred.cpu(), average="weighted")
+        val_f1 = f1_score(y[val_idx], y_pred, average="weighted")
 
         return 0, val_f1
