@@ -28,9 +28,9 @@ def corrected_std(differences, n_train, n_test):
 
 
 def compute_corrected_ttest(differences, df, n_train, n_test):
-    """Computes right-tailed paired t-test with corrected variance
+    """Computes two-tailed paired t-test with corrected variance
     to evaluate if the performance of the first model
-    is significantly better than that of the second model.
+    is significantly different from that of the second model.
 
     Null hypothesis is that the second model performs at least as good as the first model.
 
@@ -50,10 +50,10 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     t_stat : float
         Variance-corrected t-statistic.
     p_val : float
-        Variance-corrected p-value.
+        Variance-corrected two-tailed p-value.
     """
     mean = np.mean(differences)
     std = corrected_std(differences, n_train, n_test)
     t_stat = mean / std
-    p_val = t.sf(np.abs(t_stat), df)  # right-tailed t-test
+    p_val = 2 * t.sf(np.abs(t_stat), df)  # two-tailed t-test
     return t_stat, p_val
