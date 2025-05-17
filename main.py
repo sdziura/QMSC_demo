@@ -12,7 +12,7 @@ from utils.optuna_utils import (
 )
 from utils.parameters_loader import save_params, load_params, save_results
 import torch
-from config import FixedParams, NNParams, QNNParams
+from config import FixedParams, NNParams, QNNParams, SVMParams, QSVMParams
 
 
 logging.basicConfig(level=logging.INFO)
@@ -25,8 +25,8 @@ def main():
     """
     # CUDA settings
     cuda_utils.set_cuda()
-    exp_compare.find_best_qsvm()
+    exp_compare.regresja()
 
 
 if __name__ == "__main__":
-    main()
+    main()  # 12543
