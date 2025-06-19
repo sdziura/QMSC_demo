@@ -31,7 +31,7 @@ class FixedParams:
 
     folds: int = 5
     random_state: int = 42
-    val_check_interval: int = 1
+    val_check_interval: float | int = 1.0
     input_size: int = 20
     output_size: int = 2
     max_epochs: int = 100
