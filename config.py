@@ -93,9 +93,10 @@ class QNNParams(ModelParams):
     learning_rate: float = 0.0005
     batch_size: int = 16
     n_layers: int = 2  # max 2 for now
-    n_qubits: int = 2
+    n_qubits: int = 10
     embedding_axis: str = "X"
-    rot_axis_0: str = "Y"
+    embedding_axis_2: str = "Y"
+    rot_axis_0: str = "X"
     rot_axis_1: str = "Y"
     shots: int = None
     loss_func = nn.CrossEntropyLoss()

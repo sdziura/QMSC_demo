@@ -103,6 +103,16 @@ def show_data_records():
         )
 
 
-def regresja():
-    X, y = load_diabetes(return_X_y=True)
-    print(X.shape, y.shape)
+def t_test_with_values_reg():
+    diff = [
+        0.7371 - 0.4366,
+        1.2730 - 0.5340,
+        0.7484 - 0.5401,
+        0.9279 - 0.5088,
+        1.2050 - 0.5487,
+    ]
+
+    t, p = t_student.compute_corrected_ttest(
+        differences=diff, df=4, n_train=353, n_test=89
+    )
+    save_results({"diffs": diff, "t": t, "p": p}, "REGRESJA_qnn_vs_nn")
