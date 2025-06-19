@@ -147,7 +147,6 @@ class Trainer:
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
-        # model_params: ModelParams,
     ) -> tuple[float, float]:
         """
         Trains the model for a specific fold and logs the results.
@@ -185,17 +184,6 @@ class Trainer:
             shuffle=False,
             batch_size=model_params.batch_size,
         )
-
-        # if model_params.model_type == "nn":
-        #     model = TwoLayerModel(
-        #         fixed_params=self.fixed_params, NN_params=model_params
-        #     )
-        # elif model_params.model_type == "qnn":
-        #     model = VariationalQuantumCircuit(
-        #         fixed_params=self.fixed_params, QNN_params=model_params
-        #     )
-        # else:
-        #     raise ValueError("Invalid model type given")
 
         if FixedParams.use_gpu:
             model = model.to("cuda")
