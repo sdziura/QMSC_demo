@@ -66,3 +66,30 @@ def fusion_2():
     results = trainer.train(model_params=qnn_params)
 
     save_results(results, "fusion_2.json")
+
+
+def fusion_3():
+    fixed_params = FixedParams(experiment_name="Fusion_3")
+
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        # For AmplitudeEmbedding n qubits for 2^n features.
+        # Taking half of features seperatly, means we need 2*n for 2^n >= 10
+        n_qubits=8,
+        embedding_version=3,
+        ansatz_version=2,
+        embedding_axis="X",
+        embedding_axis_2="Y",
+        rot_axis_0="X",
+        rot_axis_1="Y",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_3.json")

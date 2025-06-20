@@ -44,13 +44,29 @@ class VQC_fusion_1(pl.LightningModule):
         else:
             raise ValueError(f"Invalid axis '{axis}'. Must be 'X', 'Y', or 'Z'.")
 
-    def ansatz(self, weights, axis):
+    def ansatz_1(self, weights, axis):
         """
         Defines the quantum ansatz (circuit structure).
         """
-        for i in range(self.model_params.n_qubits):
+        q = range(self.model_params.n_qubits)
+        for i in q:
             self.apply_rotation(axis, weights[i], wires=i)
-        for i in range(self.model_params.n_qubits - 1):
+        for i in q:
+            qml.CNOT(wires=[i, i + 1])
+
+    def ansatz_2(self, weights, axis):
+        """
+        Defines the quantum ansatz (circuit structure).
+        """
+        q = range(self.model_params.n_qubits)
+        for i in q[: len(q) // 2]:
+            self.apply_rotation(axis, weights[i], wires=i)
+        for i in q[: len(q) // 2 - 1]:
+            qml.CNOT(wires=[i, i + 1])
+
+        for i in q[len(q) // 2 :]:
+            self.apply_rotation(axis, weights[i], wires=i)
+        for i in q[len(q) // 2 : -1]:
             qml.CNOT(wires=[i, i + 1])
 
     def embedding_1(self, x):
@@ -72,6 +88,18 @@ class VQC_fusion_1(pl.LightningModule):
             pad_with=True,
         )
 
+    def embedding_3(self, x):
+        qml.AmplitudeEmbedding(
+            x[: len(x) // 2],
+            wires=range(self.model_params.n_qubits // 2),
+            pad_with=True,
+        )
+        qml.AmplitudeEmbedding(
+            x[len(x) // 2 :],
+            wires=range(self.model_params.n_qubits // 2, self.model_params.n_qubits),
+            pad_with=True,
+        )
+
     def variational_circuit(self, weights, x=None):
         """
         Defines the quantum circuit with parameterized gates.
@@ -83,27 +111,35 @@ class VQC_fusion_1(pl.LightningModule):
                 self.embedding_1(x=x)
             elif self.model_params.embedding_version == 2:
                 self.embedding_2(x=x)
+            elif self.model_params.embedding_version == 3:
+                self.embedding_3(x=x)
 
+            # Set the axis of rotations for each layer of ansatz
             rot_axis = ["Y"] * self.model_params.n_layers
             rot_axis[0] = self.model_params.rot_axis_0
             if self.model_params.n_layers == 2:
                 rot_axis[1] = self.model_params.rot_axis_1
 
-            for i in range(self.model_params.n_layers):
-                self.ansatz(weights[i], rot_axis[i])
-            return (
-                qml.expval(qml.PauliZ(wires=0)),
-                qml.expval(qml.PauliZ(wires=1)),
-            )
+            # If taken ansatz_version_2, the ansatz are seperated for half of qubits,
+            # so the output is the average after those 2 ansatz
+            if self.model_params.ansatz_version == 1:
+                for i in range(self.model_params.n_layers):
+                    self.ansatz_1(weights[i], rot_axis[i])
+                return (
+                    qml.expval(qml.PauliZ(wires=0)),
+                    qml.expval(qml.PauliZ(wires=1)),
+                )
+            elif self.model_params.ansatz_version == 2:
+                for i in range(self.model_params.n_layers):
+                    self.ansatz_2(weights[i], rot_axis[i])
+                return (
+                    qml.expval(qml.PauliZ(wires=0)),
+                    qml.expval(qml.PauliZ(wires=self.model_params.n_qubits // 2)),
+                )
 
         return circuit(weights, x)
 
     def forward(self, x):
-        # Pass input through the classical layer
-        # x = self.classical_layer(x)
-        # x = self.relu(x)
-
-        # Pass the output of the classical layer to the quantum circuit
         outputs = []
         for input_sample in x:
             output = self.variational_circuit(self.q_params, input_sample)
