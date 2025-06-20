@@ -44,7 +44,7 @@ def get_dataloader(
         subset,
         batch_size=batch_size,
         shuffle=shuffle,
-        num_workers=4,
-        pin_memory=True if FixedParams.use_gpu else False,
-        persistent_workers=True if FixedParams.use_gpu else False,
+        num_workers=0,
+        pin_memory=False,
+        persistent_workers=False,
     )
