@@ -14,7 +14,7 @@ def get_trainer(fixed_params: FixedParams, tb_run_name: str):
     tb_logger = TensorBoardLogger("server/tb_logs/", name=tb_run_name)
 
     early_stopping = EarlyStopping(
-        monitor="val_loss", patience=3, verbose=True, mode="min"
+        monitor="val_loss", patience=5, verbose=True, mode="min"
     )
 
     if FixedParams.use_gpu:
@@ -44,7 +44,8 @@ def get_trainer(fixed_params: FixedParams, tb_run_name: str):
         accelerator=accelerator,
         val_check_interval=fixed_params.val_check_interval,
         logger=tb_logger,
-        profiler=profiler,  # Use AdvancedProfiler here
+        profiler=profiler,
+        log_every_n_steps=1,  # to clear warning, in the model set to log every epoch only
         callbacks=[
             pl.callbacks.ModelCheckpoint(
                 dirpath="checkpoints",
