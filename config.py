@@ -97,6 +97,7 @@ class QNNParams(ModelParams):
     batch_size: int = 256
     n_layers: int = 2  # max 2 for now
     n_qubits: int = 10
+    embedding_version: int = 1
     embedding_axis: str = "X"
     embedding_axis_2: str = "Y"
     rot_axis_0: str = "X"

@@ -53,6 +53,25 @@ class VQC_fusion_1(pl.LightningModule):
         for i in range(self.model_params.n_qubits - 1):
             qml.CNOT(wires=[i, i + 1])
 
+    def embedding_1(self, x):
+        qml.AngleEmbedding(
+            x[: len(x) // 2],
+            wires=range(self.model_params.n_qubits),
+            rotation=self.model_params.embedding_axis,
+        )
+        qml.AngleEmbedding(
+            x[len(x) // 2 :],
+            wires=range(self.model_params.n_qubits),
+            rotation=self.model_params.embedding_axis_2,
+        )
+
+    def embedding_2(self, x):
+        qml.AmplitudeEmbedding(
+            x,
+            wires=range(self.model_params.n_qubits),
+            pad_with=True,
+        )
+
     def variational_circuit(self, weights, x=None):
         """
         Defines the quantum circuit with parameterized gates.
@@ -60,16 +79,10 @@ class VQC_fusion_1(pl.LightningModule):
 
         @qml.qnode(self.dev, interface="torch")
         def circuit(weights, x):
-            qml.AngleEmbedding(
-                x[: len(x) // 2],
-                wires=range(self.model_params.n_qubits),
-                rotation=self.model_params.embedding_axis,
-            )
-            qml.AngleEmbedding(
-                x[len(x) // 2 :],
-                wires=range(self.model_params.n_qubits),
-                rotation=self.model_params.embedding_axis_2,
-            )
+            if self.model_params.embedding_version == 1:
+                self.embedding_1(x=x)
+            elif self.model_params.embedding_version == 2:
+                self.embedding_2(x=x)
 
             rot_axis = ["Y"] * self.model_params.n_layers
             rot_axis[0] = self.model_params.rot_axis_0
