@@ -1,5 +1,6 @@
 import logging
 from sklearn.datasets import load_diabetes
+import torch.nn as nn
 
 from config import FixedParams, NNParams, QNNParams, QSVMParams, SVMParams
 from evaluation import compare, t_student
@@ -23,12 +24,21 @@ logger = logging.getLogger(__name__)
 def fusion_1():
     fixed_params = FixedParams(experiment_name="Fusion_1")
 
-    qnn_params_dict = load_params("QNN")
-    qnn_params = QNNParams(**qnn_params_dict)
-    model_qnn = VariationalQuantumCircuit(
-        fixed_params=fixed_params, QNN_params=qnn_params
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        n_qubits=10,
+        embedding_axis="X",
+        embedding_axis_2="Y",
+        rot_axis_0="X",
+        rot_axis_1="Y",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
     )
-    trainer = Trainer(fixed_params=fixed_params)
-    results = trainer.train(model=model_qnn)
 
-    save_results(results, "qnn_vs_nn_1.json")
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_1.json")

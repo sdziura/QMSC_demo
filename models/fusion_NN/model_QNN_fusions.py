@@ -10,9 +10,9 @@ from config import FixedParams, QNNParams
 from utils import quantum_utils
 
 
-class VQC_fusion(pl.LightningModule):
+class VQC_fusion_1(pl.LightningModule):
     def __init__(self, fixed_params: FixedParams, QNN_params: QNNParams):
-        super(VQC_fusion, self).__init__()
+        super(VQC_fusion_1, self).__init__()
         self.fixed_params = fixed_params
         self.model_params = QNN_params
 

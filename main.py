@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 def main():
     """
     Main function to run the training process.
+    nohup python main.py > output.log 2>&1 &
     """
     # CUDA settings
     cuda_utils.set_cuda()
