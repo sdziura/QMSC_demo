@@ -7,6 +7,7 @@ import mlflow
 
 import logging
 from config import FixedParams, ModelParams, NNParams, SVMParams, QNNParams, QSVMParams
+from models.gen_model import gen_model
 from models.model_NN import TwoLayerModel
 from models.model_SVM import SVM
 from models.model_QSVM import QSVM
@@ -60,7 +61,7 @@ class Trainer:
             "qsvm": self.train_fold_SVM,
         }
 
-    def train(self, model, trial_number: int = 0) -> float:
+    def train(self, model_params: ModelParams, trial_number: int = 0) -> float:
         """
         Trains the model using cross-validation.
 
@@ -76,10 +77,12 @@ class Trainer:
         float
             The average validation loss across all folds.
         """
-        if model.model_params.model_type not in self.train_fold_dispatch:
-            raise ValueError(f"Unknown model type: {model.model_params.model_type}")
+        if model_params.model_type not in self.train_fold_dispatch:
+            raise ValueError(f"Unknown model type: {model_params.model_type}")
 
-        run_name = f"CrossValidation_Experiment_{model.model_params.model_type}_Trial_{trial_number}"
+        run_name = (
+            f"CrossValidation_Experiment_{model_params.model_type}_Trial_{trial_number}"
+        )
         X, y = load_data(self.fixed_params.dataset_file)
 
         skf = StratifiedKFold(
@@ -99,20 +102,23 @@ class Trainer:
 
         with mlflow.start_run(run_name=run_name):
             log_mlflow_params(self.fixed_params.__dict__)
-            log_mlflow_params(model.model_params.__dict__)
+            log_mlflow_params(model_params.__dict__)
             for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
                 with mlflow.start_run(nested=True, run_name=f"Fold_{fold+1}"):
                     logger.info(f"Fold {fold+1}")
+                    if self.fixed_params.use_gpu:
+                        X = X.cuda()
+                        y = y.cuda()
                     val_loss, val_f1 = self.train_fold_dispatch[
-                        model.model_params.model_type
+                        model_params.model_type
                     ](
-                        model=model,
                         fold=fold,
                         X=X,
                         y=y,
                         train_idx=train_idx,
                         val_idx=val_idx,
                         trial_number=trial_number,
+                        model_params=model_params,
                     )
                     mlflow.log_metric("val_f1", val_f1)
                     mlflow.log_metric("val_loss", val_loss)
@@ -140,13 +146,13 @@ class Trainer:
 
     def train_fold_NN(
         self,
-        model,
         fold: int,
         X: torch.tensor,
         y: torch.tensor,
         train_idx: np.ndarray,
         val_idx: np.ndarray,
         trial_number: int,
+        model_params: ModelParams,
     ) -> tuple[float, float]:
         """
         Trains the model for a specific fold and logs the results.
@@ -169,8 +175,7 @@ class Trainer:
         tuple[float, float]
             The validation loss and validation accuracy for the fold.
         """
-        model_params = model.model_params
-
+        model = gen_model(fixed_params=self.fixed_params, model_params=model_params)
         dataset = TensorDataset(X, y)
         train_loader = get_dataloader(
             dataset=dataset,
@@ -220,12 +225,7 @@ class Trainer:
         tuple[float, float]
             The validation loss (0 for SVM) and validation F1 score for the fold.
         """
-        if model_params.model_type == "svm":
-            model = SVM(fixed_params=self.fixed_params, SVM_params=model_params)
-        elif model_params.model_type == "qsvm":
-            model = QSVM(fixed_params=self.fixed_params, QSVM_params=model_params)
-        else:
-            raise ValueError("Invalid model type given")
+        model = gen_model(fixed_params=self.fixed_params, model_params=model_params)
 
         model.fit(X[train_idx], y[train_idx])
         y_pred = model.predict(X[val_idx])
