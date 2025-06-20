@@ -7,6 +7,7 @@ from pytorch_lightning.profilers import PyTorchProfiler
 from torch.profiler import schedule
 
 from config import FixedParams, ModelParams, NNParams, SVMParams, QNNParams
+from utils.pytorch_lighting_utils import OverrideEpochStepCallback
 
 
 def get_trainer(fixed_params: FixedParams, tb_run_name: str):
@@ -55,6 +56,7 @@ def get_trainer(fixed_params: FixedParams, tb_run_name: str):
                 mode="min",
             ),
             early_stopping,
+            OverrideEpochStepCallback(),
         ],
     )
     return trainer
