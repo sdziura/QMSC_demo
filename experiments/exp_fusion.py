@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def fusion_1():
-    fixed_params = FixedParams(experiment_name="Fusion_1")
+    fixed_params = FixedParams(experiment_name="Fusion_1_to delete")
 
     qnn_params = QNNParams(
         model_name="VQC_fusion_1",
@@ -42,3 +42,27 @@ def fusion_1():
     results = trainer.train(model_params=qnn_params)
 
     save_results(results, "fusion_1.json")
+
+
+def fusion_2():
+    fixed_params = FixedParams(experiment_name="Fusion_2")
+
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        n_qubits=5,  # For AmplitudeEmbedding n qubits for 2^n features.
+        embedding_version=2,
+        embedding_axis="X",
+        embedding_axis_2="Y",
+        rot_axis_0="X",
+        rot_axis_1="Y",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_2.json")
