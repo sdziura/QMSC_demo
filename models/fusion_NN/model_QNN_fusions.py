@@ -24,7 +24,10 @@ class VQC_fusion_1(pl.LightningModule):
         # self.relu = nn.ReLU()
 
         # Quantum parameters
-        weight_shapes = (QNN_params.n_layers, QNN_params.n_qubits)
+        if self.model_params.ansatz_version in {3, 4}:
+            weight_shapes = (QNN_params.n_layers, QNN_params.n_qubits, 3)
+        else:
+            weight_shapes = (QNN_params.n_layers, QNN_params.n_qubits)
         self.q_params = nn.Parameter(torch.rand(weight_shapes) * np.pi)
 
         # Loss and metrics
@@ -68,6 +71,25 @@ class VQC_fusion_1(pl.LightningModule):
             self.apply_rotation(axis, weights[i], wires=i)
         for i in q[len(q) // 2 : -1]:
             qml.CNOT(wires=[i, i + 1])
+
+    def ansatz_3(self, weights):
+        """
+        Defines the quantum ansatz (circuit structure).
+        """
+        q = range(self.model_params.n_qubits)
+        qml.StronglyEntanglingLayers(
+            weights=weights[:, : len(q) // 2, :], wires=q[: len(q) // 2]
+        )
+        qml.StronglyEntanglingLayers(
+            weights=weights[:, len(q) // 2 :, :], wires=q[len(q) // 2 :]
+        )
+
+    def ansatz_4(self, weights):
+        """
+        Defines the quantum ansatz (circuit structure).
+        """
+        q = range(self.model_params.n_qubits)
+        qml.StronglyEntanglingLayers(weights=weights, wires=q)
 
     def embedding_1(self, x):
         qml.AngleEmbedding(
@@ -135,6 +157,18 @@ class VQC_fusion_1(pl.LightningModule):
                 return (
                     qml.expval(qml.PauliZ(wires=0)),
                     qml.expval(qml.PauliZ(wires=self.model_params.n_qubits // 2)),
+                )
+            elif self.model_params.ansatz_version == 3:
+                self.ansatz_3(weights)
+                return (
+                    qml.expval(qml.PauliZ(wires=0)),
+                    qml.expval(qml.PauliZ(wires=self.model_params.n_qubits // 2)),
+                )
+            elif self.model_params.ansatz_version == 4:
+                self.ansatz_4(weights)
+                return (
+                    qml.expval(qml.PauliZ(wires=0)),
+                    qml.expval(qml.PauliZ(wires=1)),
                 )
 
         return circuit(weights, x)

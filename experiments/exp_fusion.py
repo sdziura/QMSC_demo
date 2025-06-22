@@ -93,3 +93,78 @@ def fusion_3():
     results = trainer.train(model_params=qnn_params)
 
     save_results(results, "fusion_3.json")
+
+
+def fusion_4():
+    fixed_params = FixedParams(experiment_name="Fusion_4")
+
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        # For AmplitudeEmbedding n qubits for 2^n features.
+        # Taking half of features seperatly, means we need 2*n for 2^n >= 10
+        n_qubits=8,
+        embedding_version=3,
+        ansatz_version=3,
+        rot_axis_0="X",
+        rot_axis_1="X",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_4.json")
+
+
+def fusion_5a():
+    fixed_params = FixedParams(experiment_name="Fusion_5a")
+
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        n_qubits=5,  # For AmplitudeEmbedding n qubits for 2^n features.
+        ansatz_version=4,
+        embedding_version=2,
+        embedding_axis="X",
+        embedding_axis_2="Y",
+        rot_axis_0="X",
+        rot_axis_1="Y",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_5.json")
+
+
+def fusion_5b():
+    fixed_params = FixedParams(experiment_name="Fusion_5a")
+
+    qnn_params = QNNParams(
+        model_name="VQC_fusion_1",
+        learning_rate=0.001,
+        batch_size=256,
+        n_layers=2,
+        n_qubits=5,  # For AmplitudeEmbedding n qubits for 2^n features.
+        ansatz_version=4,
+        embedding_version=2,
+        embedding_axis="X",
+        embedding_axis_2="Y",
+        rot_axis_0="X",
+        rot_axis_1="Y",
+        shots=None,
+        loss_func=nn.CrossEntropyLoss(),
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qnn_params)
+
+    save_results(results, "fusion_5.json")
