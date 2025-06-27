@@ -62,13 +62,20 @@ class QSVM:
 
         @qml.qnode(self.dev, interface="autograd")
         def statevector_(x):
-            if self.n_qubits == 10:
-                self.feature_map(x)
-            elif self.n_qubits == 20:
-                qml.AngleEmbedding(x, range(self.n_qubits))
+            if self.model_params.embedding_type == 1:
+                if self.n_qubits == 10:
+                    self.feature_map(x)
+                elif self.n_qubits == 20:
+                    qml.AngleEmbedding(x, range(self.n_qubits))
+                else:
+                    raise ValueError(
+                        f"Number of qubits is {self.n_qubits}. Should be 10 or 20, for this embedding_type"
+                    )
+            elif self.model_params.embedding_type == 2:
+                self.feature_map_2(x)
             else:
                 raise ValueError(
-                    f"Number of qubits is {self.n_qubits}. Should be 10 or 20"
+                    f"Invalid embedding_type number. Given: {self.model_params.embedding_type}"
                 )
 
             return qml.state()
@@ -109,6 +116,9 @@ class QSVM:
         for i in range(self.n_qubits):
             qml.RX(x[i], wires=i)
             qml.RY(x[self.n_qubits + i], wires=i)
+
+    def feature_map_2(self, x):
+        qml.AmplitudeEmbedding(x, range(self.model_params.n_qubits), pad_with=True)
 
     def fit(self, X, y):
         self.model.fit(X=X, y=y)

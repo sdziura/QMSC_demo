@@ -112,6 +112,7 @@ class QSVMParams(ModelParams):
     model_type: str = "qsvm"
     model_name: str = "QSVM"
     n_qubits: int = 10
+    embedding_type: int = 1
     embedding_axis: str = "X"
     C: float = 1.0
     shots: int = None

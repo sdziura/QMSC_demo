@@ -168,3 +168,18 @@ def fusion_5b():
     results = trainer.train(model_params=qnn_params)
 
     save_results(results, "fusion_5.json")
+
+
+def fusion_qsvm_1():
+    fixed_params = FixedParams(experiment_name="Fusion_qsvm_1")
+
+    qsvm_params = QSVMParams(
+        n_qubits=5,
+        embedding_type=2,
+        embedding_axis="X",
+    )
+
+    trainer = Trainer(fixed_params=fixed_params)
+    results = trainer.train(model_params=qsvm_params)
+
+    save_results(results, "fusion_qsvm_1.json")

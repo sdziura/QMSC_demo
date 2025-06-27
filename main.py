@@ -26,7 +26,7 @@ def main():
     """
     # CUDA settings
     cuda_utils.set_cuda()
-    exp_fusion.fusion_5()
+    exp_fusion.fusion_qsvm_1()
 
 
 if __name__ == "__main__":
