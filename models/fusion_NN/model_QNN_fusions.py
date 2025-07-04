@@ -54,7 +54,7 @@ class VQC_fusion_1(pl.LightningModule):
         q = range(self.model_params.n_qubits)
         for i in q:
             self.apply_rotation(axis, weights[i], wires=i)
-        for i in q:
+        for i in q[:-1]:
             qml.CNOT(wires=[i, i + 1])
 
     def ansatz_2(self, weights, axis):
@@ -92,6 +92,9 @@ class VQC_fusion_1(pl.LightningModule):
         qml.StronglyEntanglingLayers(weights=weights, wires=q)
 
     def embedding_1(self, x):
+        # Test if scaled to [-pi, pi]
+        assert x.max() <= torch.pi, "Data not scaled to [-pi, pi]"
+        assert x.min() >= -torch.pi, "Data not scaled to [-pi, pi]"
         qml.AngleEmbedding(
             x[: len(x) // 2],
             wires=range(self.model_params.n_qubits),
@@ -108,6 +111,7 @@ class VQC_fusion_1(pl.LightningModule):
             x,
             wires=range(self.model_params.n_qubits),
             pad_with=True,
+            normalize=True,
         )
 
     def embedding_3(self, x):
@@ -115,11 +119,13 @@ class VQC_fusion_1(pl.LightningModule):
             x[: len(x) // 2],
             wires=range(self.model_params.n_qubits // 2),
             pad_with=True,
+            normalize=True,
         )
         qml.AmplitudeEmbedding(
             x[len(x) // 2 :],
             wires=range(self.model_params.n_qubits // 2, self.model_params.n_qubits),
             pad_with=True,
+            normalize=True,
         )
 
     def variational_circuit(self, weights, x=None):

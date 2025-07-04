@@ -39,8 +39,8 @@ class FixedParams:
     dataset_file: str = "data/hmm_gaussian_chains.h5"
     mlflow_uri: str = "http://127.0.0.1:8080"
     optuna_trials: int = 10
-    use_gpu = False
-    profiler_active_steps = 0
+    use_gpu: bool = False
+    profiler_active_steps: int = 0
 
 
 @dataclass
@@ -112,7 +112,7 @@ class QSVMParams(ModelParams):
     model_type: str = "qsvm"
     model_name: str = "QSVM"
     n_qubits: int = 10
-    embedding_type: int = 1
+    embedding_version: int = 1
     embedding_axis: str = "X"
     C: float = 1.0
     shots: int = None

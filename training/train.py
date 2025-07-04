@@ -12,7 +12,7 @@ from models.model_NN import TwoLayerModel
 from models.model_SVM import SVM
 from models.model_QSVM import QSVM
 from models.model_QNN import VariationalQuantumCircuit
-from utils.data_loader import load_data, get_dataloader
+from utils.data_loader import load_data, get_dataloader, normalize_data
 from utils.mlflow_utils import log_mlflow_params, initialize_mlflow
 from training.trainer import get_trainer
 from utils.cuda_utils import check_type
@@ -84,7 +84,9 @@ class Trainer:
             f"CrossValidation_Experiment_{model_params.model_type}_Trial_{trial_number}"
         )
         X, y = load_data(self.fixed_params.dataset_file)
-
+        # Normalize/scale data according to the chosen params
+        # (for amplitude embedding, normalization takes place during embedding)
+        X = normalize_data(x=X, model_params=model_params)
         skf = StratifiedKFold(
             n_splits=self.fixed_params.folds,
             shuffle=True,

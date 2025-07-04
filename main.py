@@ -1,6 +1,6 @@
 import logging
 from evaluation.compare import compare
-from experiments import exp_compare, exp_fusion
+from experiments import exp_compare, exp_fusion, exp_test
 from models.model_NN import TwoLayerModel
 from models.model_QNN import VariationalQuantumCircuit
 from training.train import Trainer
@@ -26,7 +26,7 @@ def main():
     """
     # CUDA settings
     cuda_utils.set_cuda()
-    exp_fusion.fusion_qsvm_1()
+    exp_fusion.fusion_1()
 
 
 if __name__ == "__main__":

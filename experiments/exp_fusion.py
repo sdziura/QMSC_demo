@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def fusion_1():
-    fixed_params = FixedParams(experiment_name="Fusion_1_to delete")
+    fixed_params = FixedParams(experiment_name="Fusion_1_repeated")
 
     qnn_params = QNNParams(
         model_name="VQC_fusion_1",
@@ -45,7 +45,7 @@ def fusion_1():
 
 
 def fusion_2():
-    fixed_params = FixedParams(experiment_name="Fusion_2")
+    fixed_params = FixedParams(experiment_name="Fusion_2_repeated")
 
     qnn_params = QNNParams(
         model_name="VQC_fusion_1",
